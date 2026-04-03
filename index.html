@@ -1395,21 +1395,27 @@ body {
           📂 JSON 불러오기
         </button>
         <input type="file" id="jsonFileInput" accept=".json" style="display:none;" onchange="loadNewsFromFile(this)">
-        <select id="testCategory" class="form-input" style="height:32px; font-size:.75rem; padding:2px 6px; border-radius:6px;">
-          <option value="real_estate_market">부동산 시장 & 정책</option>
-          <option value="office_lease">오피스 임대차</option>
-          <option value="asset_transaction">자산 매입·매각</option>
-          <option value="corporate_space">기업 공간 전략</option>
-          <option value="industrial_asset">산업용 자산</option>
-          <option value="smart_esg">스마트 빌딩 & ESG</option>
-        </select>
-        <button class="btn btn-sm btn-outline" id="btnTestCollect" onclick="collectNewsTest()" style="min-width:110px; border-color:#f59e0b; color:#b45309;">
-          🧪 테스트 수집
-        </button>
         <button class="btn btn-sm btn-primary" id="btnCollect" onclick="collectNews()" style="min-width:140px;">
           🔍 뉴스 수집 시작
         </button>
       </div>
+    </div>
+    <!-- 테스트 수집 바 (1개 카테고리만 실행) -->
+    <div style="display:flex; align-items:center; gap:8px; padding:6px 12px; background:#fffbeb; border:1px solid #fde68a; border-radius:8px; margin-top:6px;">
+      <span style="font-size:.75rem; color:#92400e; font-weight:600; white-space:nowrap;">🧪 테스트 수집</span>
+      <select id="testCategory" class="form-input" style="height:30px; font-size:.75rem; padding:2px 8px; border-radius:6px; flex:1; max-width:200px;">
+        <option value="real_estate_market">부동산 시장 &amp; 정책</option>
+        <option value="office_lease">오피스 임대차</option>
+        <option value="asset_transaction">자산 매입·매각</option>
+        <option value="corporate_space">기업 공간 전략</option>
+        <option value="industrial_asset">산업용 자산</option>
+        <option value="smart_esg">스마트 빌딩 &amp; ESG</option>
+      </select>
+      <button class="btn btn-sm" id="btnTestCollect" onclick="collectNewsTest()"
+        style="height:30px; padding:0 14px; background:#f59e0b; color:#fff; border:none; border-radius:6px; font-size:.75rem; font-weight:600; cursor:pointer; white-space:nowrap;">
+        1개 카테고리만 실행
+      </button>
+      <span style="font-size:.7rem; color:#a16207;">API 비용 절약용</span>
     </div>
 
     <!-- News List (동적 로딩) -->
