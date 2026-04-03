@@ -888,85 +888,60 @@ def is_within_range(date_obj: Optional[datetime],
 #  뉴스 수집: Naver News API
 # ================================================================
 
-def _source_from_naver_item(original_link: str, naver_link: str, title: str) -> str:
-    """네이버 뉴스 아이템에서 실제 신문사명 추출.
-    우선순위: ① naver_link oid 코드 → ② originallink 도메인 → ③ 제목 대괄호
-    """
-    # ── ① naver URL oid 코드 매핑 ────────────────────────────────
-    OID_MAP = {
-        '001': '연합뉴스',    '003': '뉴시스',      '005': '국민일보',
-        '006': '경향신문',    '007': '경향신문',     '008': '머니투데이',
-        '009': '중앙일보',    '010': '중앙일보',     '011': '서울경제',
-        '013': '헤럴드경제',  '014': '파이낸셜뉴스', '015': '한국경제',
-        '016': '한국경제',    '018': '이데일리',     '020': '동아일보',
-        '021': '문화일보',    '022': '세계일보',     '023': '조선일보',
-        '024': '한국일보',    '025': '중앙일보',     '028': '한겨레',
-        '029': '디지털타임스','030': '국민일보',     '032': '경향신문',
-        '033': '한겨레',      '034': '조선일보',     '037': '조선비즈',
-        '038': '한국일보',    '047': '오마이뉴스',   '050': '파이낸셜뉴스',
-        '055': 'SBS',         '056': 'KBS',          '057': 'MBC',
-        '058': 'YTN',         '079': '서울신문',     '081': '서울신문',
-        '082': '머니투데이',  '092': '머니투데이',   '093': '헤럴드경제',
-        '096': '파이낸셜뉴스','098': '뉴시스',       '119': '아이뉴스24',
-        '138': '이데일리',    '214': '한국경제TV',   '215': '한국경제',
-        '243': '이코노미스트','277': '아시아경제',   '311': '아시아경제',
-        '366': '조선비즈',    '421': '뉴스핌',       '422': '뉴스핌',
-        '469': '한국일보',    '584': '서울경제',     '011': '서울경제',
-    }
-    import re as _re
-    for url in [naver_link, original_link]:
-        if not url:
-            continue
-        m = _re.search(r'/article/(\d{3})/', url)
-        if m and m.group(1) in OID_MAP:
-            return OID_MAP[m.group(1)]
-
-    # ── ② originallink 도메인 매핑 ───────────────────────────────
+def _source_from_url(url: str) -> str:
+    """originallink URL 도메인으로 신문사명 반환"""
+    if not url:
+        return "네이버뉴스"
     DOMAIN_MAP = {
-        'hankyung.com':    '한국경제',   'mk.co.kr':       '매일경제',
-        'sedaily.com':     '서울경제',   'edaily.co.kr':   '이데일리',
-        'mt.co.kr':        '머니투데이', 'newsis.com':     '뉴시스',
-        'newspim.com':     '뉴스핌',     'thebell.co.kr':  '더벨',
-        'etnews.com':      '전자신문',   'chosun.com':     '조선일보',
-        'donga.com':       '동아일보',   'joongang.co.kr': '중앙일보',
-        'hani.co.kr':      '한겨레',     'khan.co.kr':     '경향신문',
-        'yna.co.kr':       '연합뉴스',   'heraldcorp.com': '헤럴드경제',
-        'asiae.co.kr':     '아시아경제', 'fnnews.com':     '파이낸셜뉴스',
-        'inews24.com':     '아이뉴스24', 'ajunews.com':    '아주경제',
-        'dailian.co.kr':   '데일리안',   'ohmynews.com':   '오마이뉴스',
+        'hankyung.com':      '한국경제',
+        'mk.co.kr':          '매일경제',
+        'sedaily.com':       '서울경제',
+        'edaily.co.kr':      '이데일리',
+        'mt.co.kr':          '머니투데이',
+        'newsis.com':        '뉴시스',
+        'newspim.com':       '뉴스핌',
+        'thebell.co.kr':     '더벨',
+        'bloter.net':        '블로터',
+        'zdnet.co.kr':       'ZDNet',
+        'etnews.com':        '전자신문',
+        'chosun.com':        '조선일보',
+        'donga.com':         '동아일보',
+        'joongang.co.kr':    '중앙일보',
+        'hani.co.kr':        '한겨레',
+        'khan.co.kr':        '경향신문',
+        'ohmynews.com':      '오마이뉴스',
+        'yna.co.kr':         '연합뉴스',
+        'yonhapnewstv.co.kr':'연합뉴스TV',
+        'kbs.co.kr':         'KBS',
+        'mbc.co.kr':         'MBC',
+        'sbs.co.kr':         'SBS',
+        'jtbc.co.kr':        'JTBC',
+        'mbn.co.kr':         'MBN',
+        'tvchosun.com':      'TV조선',
+        'ytn.co.kr':         'YTN',
+        'asiae.co.kr':       '아시아경제',
+        'ajunews.com':       '아주경제',
+        'heraldcorp.com':    '헤럴드경제',
+        'bizchosun.com':     '비즈조선',
+        'dailian.co.kr':     '데일리안',
+        'fnnews.com':        '파이낸셜뉴스',
+        'paxetv.com':        '팍스경제TV',
+        'inews24.com':       '아이뉴스24',
+        'financial.co.kr':   '파이낸셜포스트',
+        'engnews24h.com':    '공학신문',
+        'biz.chosun.com':    '비즈조선',
+        'news.naver.com':    '네이버뉴스',
+        'n.news.naver.com':  '네이버뉴스',
     }
-    if original_link and 'naver.com' not in original_link:
-        try:
-            from urllib.parse import urlparse as _up
-            host = _up(original_link).netloc.lower().lstrip('www.')
-            for domain, name in DOMAIN_MAP.items():
-                if host == domain or host.endswith('.' + domain):
-                    return name
-        except Exception:
-            pass
-
-    # ── ③ 제목 대괄호에서 추출 ────────────────────────────────────
-    EDITORIAL_TAGS = {
-        '단독', '속보', '긴급', '인터뷰', '기획', '특집', '칼럼', '사설',
-        '분석', '해설', '기고', '특보', '포토', '영상', '사진', '인사',
-        'exclusive', 'thebell note', 'pf radar',
-    }
-    m = _re.match(r'^\[([^\]]{2,20})\]', title or '')
-    if m:
-        candidate = m.group(1).strip()
-        if candidate.lower() not in EDITORIAL_TAGS and not _re.match(r'^[A-Z0-9\s]+$', candidate):
-            return candidate
-
+    try:
+        from urllib.parse import urlparse
+        host = urlparse(url).netloc.lower().lstrip('www.')
+        for domain, name in DOMAIN_MAP.items():
+            if host == domain or host.endswith('.' + domain):
+                return name
+    except Exception:
+        pass
     return "네이버뉴스"
-
-
-def _clean_title(title: str) -> str:
-    """제목 앞 대괄호 출처/섹션 태그 제거 + 말줄임표 제거"""
-    if not title:
-        return ""
-    title = re.sub(r'^(\s*\[[^\]]{1,40}\]\s*)+', '', title).strip()
-    title = re.sub(r'\s*[\.…⋯]+\s*$', '', title).strip()
-    return title
 
 
 def fetch_naver_news(config: NewsConfig, queries: List[str],
@@ -1027,15 +1002,11 @@ def fetch_naver_news(config: NewsConfig, queries: List[str],
                     seen_hashes.add(h)
 
                     all_items.append({
-                        "title":       _clean_title(title),
+                        "title":       title,
                         "description": desc[:500],
                         "link":        item.get("originallink") or item.get("link", ""),
-                        "naver_link":  item.get("link", ""),
-                        "source":      _source_from_naver_item(
-                                           item.get("originallink", ""),
-                                           item.get("link", ""),
-                                           title
-                                       ),
+                        "naver_link":  item.get("link", ""),   # n.news.naver.com 폴백용
+                        "source":      _source_from_url(item.get("originallink") or item.get("link", "")),
                         "pub_date":    pub_date.isoformat(),
                         "hash_id":     h,
                     })
