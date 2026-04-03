@@ -2286,7 +2286,7 @@ function renderNews() {
           <span style="font-size:.7rem; color:${relColor}; font-weight:600;">${relBadge}</span>
           ${catBadge}
         </div>
-        <div class="news-title" style="cursor:pointer; word-break:keep-all;" onclick="window.open('${item.link}','_blank')">${(item.title||'').replace(/^(\s*\[[^\]]{1,40}\]\s*)+/, '').replace(/\s*[\.…⋯]+\s*$/, '').trim()}</div>
+        <div class="news-title" style="cursor:pointer; word-break:keep-all;" onclick="window.open('${item.link}','_blank')">${(item.title||'').replace(/\s*[\.…⋯]{2,}\s*$/, '').trim()}</div>
         <div class="news-ai-tag" id="aiTag_${id}">🤖 AI 큐레이션 · 관련도 ${item.ai_relevance || 'N/A'}</div>
         ${(()=>{
           const s = (item.ai_short_summary||'').trim().replace(/\s*[\.…⋯]{2,}\s*$/, '').trim();

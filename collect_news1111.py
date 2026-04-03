@@ -888,62 +888,6 @@ def is_within_range(date_obj: Optional[datetime],
 #  뉴스 수집: Naver News API
 # ================================================================
 
-def _source_from_url(url: str) -> str:
-    """originallink URL 도메인으로 신문사명 반환"""
-    if not url:
-        return "네이버뉴스"
-    DOMAIN_MAP = {
-        'hankyung.com':      '한국경제',
-        'mk.co.kr':          '매일경제',
-        'sedaily.com':       '서울경제',
-        'edaily.co.kr':      '이데일리',
-        'mt.co.kr':          '머니투데이',
-        'newsis.com':        '뉴시스',
-        'newspim.com':       '뉴스핌',
-        'thebell.co.kr':     '더벨',
-        'bloter.net':        '블로터',
-        'zdnet.co.kr':       'ZDNet',
-        'etnews.com':        '전자신문',
-        'chosun.com':        '조선일보',
-        'donga.com':         '동아일보',
-        'joongang.co.kr':    '중앙일보',
-        'hani.co.kr':        '한겨레',
-        'khan.co.kr':        '경향신문',
-        'ohmynews.com':      '오마이뉴스',
-        'yna.co.kr':         '연합뉴스',
-        'yonhapnewstv.co.kr':'연합뉴스TV',
-        'kbs.co.kr':         'KBS',
-        'mbc.co.kr':         'MBC',
-        'sbs.co.kr':         'SBS',
-        'jtbc.co.kr':        'JTBC',
-        'mbn.co.kr':         'MBN',
-        'tvchosun.com':      'TV조선',
-        'ytn.co.kr':         'YTN',
-        'asiae.co.kr':       '아시아경제',
-        'ajunews.com':       '아주경제',
-        'heraldcorp.com':    '헤럴드경제',
-        'bizchosun.com':     '비즈조선',
-        'dailian.co.kr':     '데일리안',
-        'fnnews.com':        '파이낸셜뉴스',
-        'paxetv.com':        '팍스경제TV',
-        'inews24.com':       '아이뉴스24',
-        'financial.co.kr':   '파이낸셜포스트',
-        'engnews24h.com':    '공학신문',
-        'biz.chosun.com':    '비즈조선',
-        'news.naver.com':    '네이버뉴스',
-        'n.news.naver.com':  '네이버뉴스',
-    }
-    try:
-        from urllib.parse import urlparse
-        host = urlparse(url).netloc.lower().lstrip('www.')
-        for domain, name in DOMAIN_MAP.items():
-            if host == domain or host.endswith('.' + domain):
-                return name
-    except Exception:
-        pass
-    return "네이버뉴스"
-
-
 def fetch_naver_news(config: NewsConfig, queries: List[str],
                      date_from: datetime, date_to: datetime) -> List[Dict]:
     """Naver 뉴스 — display=100 페이지네이션으로 date_from 기사까지 탐색"""
@@ -1006,7 +950,7 @@ def fetch_naver_news(config: NewsConfig, queries: List[str],
                         "description": desc[:500],
                         "link":        item.get("originallink") or item.get("link", ""),
                         "naver_link":  item.get("link", ""),   # n.news.naver.com 폴백용
-                        "source":      _source_from_url(item.get("originallink") or item.get("link", "")),
+                        "source":      "네이버뉴스",
                         "pub_date":    pub_date.isoformat(),
                         "hash_id":     h,
                     })
