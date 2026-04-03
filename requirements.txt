@@ -1,0 +1,5 @@
+flask
+requests
+anthropic
+google-generativeai
+urllib3

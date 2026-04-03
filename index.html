@@ -1,0 +1,4895 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRE Daily Brief — 상업용 부동산 뉴스 큐레이션 플랫폼</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;900&family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ===== RESET & BASE ===== */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --bg-primary: #f5f7fa;
+  --bg-secondary: #ffffff;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f8fafc;
+  --bg-input: #f1f5f9;
+  --border: #e2e8f0;
+  --border-active: #3b82f6;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --text-muted: #94a3b8;
+  --accent-blue: #3b82f6;
+  --accent-blue-dim: #2563eb;
+  --accent-cyan: #0891b2;
+  --accent-green: #059669;
+  --accent-amber: #d97706;
+  --accent-red: #dc2626;
+  --accent-purple: #7c3aed;
+  --accent-pink: #db2777;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,.07), 0 2px 4px rgba(0,0,0,.04);
+  --shadow-lg: 0 10px 30px rgba(0,0,0,.08), 0 4px 8px rgba(0,0,0,.04);
+  --shadow-glow-blue: 0 0 20px rgba(59,130,246,.1);
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --transition: .2s cubic-bezier(.4,0,.2,1);
+}
+
+html { font-size: 14px; scroll-behavior: smooth; }
+body {
+  font-family: 'Noto Sans KR', 'Inter', -apple-system, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* ===== LAYOUT ===== */
+.app-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  grid-template-rows: 64px 1fr;
+  min-height: 100vh;
+}
+
+/* ===== TOP NAV ===== */
+.topnav {
+  grid-column: 1 / -1;
+  background: rgba(255,255,255,.92);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.topnav-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.logo {
+  font-family: 'Inter', sans-serif;
+  font-weight: 900;
+  font-size: 1.35rem;
+  letter-spacing: -.03em;
+  background: linear-gradient(135deg, #1e40af, #0891b2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.logo-sub {
+  font-size: .75rem;
+  color: var(--text-muted);
+  font-weight: 400;
+  letter-spacing: .02em;
+}
+.topnav-center {
+  display: flex;
+  gap: 6px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 4px;
+}
+.topnav-tab {
+  padding: 6px 18px;
+  font-size: .82rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: var(--transition);
+  border: none;
+  background: none;
+}
+.topnav-tab.active, .topnav-tab:hover {
+  background: var(--accent-blue);
+  color: #fff;
+}
+.topnav-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  font-size: .82rem;
+  font-weight: 600;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: var(--transition);
+  font-family: inherit;
+}
+.btn-primary {
+  background: var(--accent-blue);
+  color: #fff;
+}
+.btn-primary:hover { background: var(--accent-blue-dim); transform: translateY(-1px); box-shadow: var(--shadow-glow-blue); }
+.btn-outline {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+.btn-outline:hover { border-color: var(--accent-blue); color: var(--accent-blue); }
+.btn-success { background: var(--accent-green); color: #fff; }
+.btn-success:hover { background: #059669; }
+.btn-danger { background: rgba(239,68,68,.15); color: var(--accent-red); border: 1px solid rgba(239,68,68,.3); }
+.btn-danger:hover { background: rgba(239,68,68,.25); }
+.btn-sm { padding: 5px 12px; font-size: .75rem; }
+.btn-lg { padding: 12px 28px; font-size: .92rem; }
+
+.status-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse-dot 2s infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .4; }
+}
+.user-avatar {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-purple), var(--accent-pink));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .8rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border);
+  padding: 20px 14px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sidebar-section-label {
+  font-size: .68rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  padding: 16px 12px 6px;
+}
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: var(--transition);
+  font-size: .85rem;
+  color: var(--text-secondary);
+  position: relative;
+}
+.sidebar-item:hover { background: var(--bg-card); color: var(--text-primary); }
+.sidebar-item.active {
+  background: rgba(59,130,246,.12);
+  color: var(--accent-blue);
+  font-weight: 600;
+}
+.sidebar-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 20px;
+  background: var(--accent-blue);
+  border-radius: 0 3px 3px 0;
+}
+.sidebar-icon {
+  width: 20px;
+  text-align: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+.sidebar-badge {
+  margin-left: auto;
+  background: var(--accent-blue);
+  color: #fff;
+  font-size: .65rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 10px;
+  min-width: 22px;
+  text-align: center;
+}
+.sidebar-badge.amber { background: var(--accent-amber); }
+.sidebar-badge.green { background: var(--accent-green); }
+.sidebar-badge.red { background: var(--accent-red); }
+
+/* ===== MAIN CONTENT ===== */
+.main-content {
+  padding: 24px 28px;
+  overflow-y: auto;
+  background: var(--bg-primary);
+}
+
+/* ===== DASHBOARD HEADER ===== */
+.dash-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+.dash-header h1 {
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -.02em;
+}
+.dash-header h1 span {
+  color: var(--accent-blue);
+}
+.dash-date {
+  font-size: .85rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+.dash-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+/* ===== ECONOMIC INDICATORS ===== */
+.indicators-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+  margin-bottom: 28px;
+}
+.indicator-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 18px;
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+.indicator-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+}
+.indicator-card.up::before { background: var(--accent-green); }
+.indicator-card.down::before { background: var(--accent-red); }
+.indicator-card.neutral::before { background: var(--accent-blue); }
+.indicator-card.weather::before { background: linear-gradient(90deg, var(--accent-amber), var(--accent-cyan)); }
+.indicator-card:hover { border-color: var(--border-active); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.indicator-label {
+  font-size: .72rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  margin-bottom: 8px;
+}
+.indicator-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+.indicator-change {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .78rem;
+  font-weight: 600;
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.indicator-change.up { color: var(--accent-green); }
+.indicator-change.down { color: var(--accent-red); }
+.indicator-change.neutral { color: var(--text-muted); }
+.indicator-sub {
+  font-size: .7rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+.weather-icon { font-size: 2rem; margin-bottom: 4px; }
+.weather-temp {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+.weather-desc { font-size: .75rem; color: var(--text-muted); }
+
+/* ===== CATEGORY TABS ===== */
+.category-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 5px;
+  overflow-x: auto;
+}
+.cat-tab {
+  padding: 10px 20px;
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+  border: none;
+  background: none;
+  font-family: inherit;
+  position: relative;
+}
+.cat-tab:hover { color: var(--text-primary); background: var(--bg-card); }
+.cat-tab.active {
+  background: var(--accent-blue);
+  color: #fff;
+}
+.cat-tab .tab-count {
+  font-size: .65rem;
+  background: rgba(255,255,255,.2);
+  padding: 1px 6px;
+  border-radius: 8px;
+  margin-left: 6px;
+}
+.cat-tab.active .tab-count { background: rgba(255,255,255,.3); }
+
+/* ===== NEWS CONTROL BAR ===== */
+.control-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding: 12px 18px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+.control-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.control-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.select-all-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: .82rem;
+  color: var(--text-secondary);
+}
+.checkbox-custom {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+  flex-shrink: 0;
+}
+.checkbox-custom.checked {
+  background: var(--accent-blue);
+  border-color: var(--accent-blue);
+}
+.checkbox-custom.checked::after {
+  content: '✓';
+  color: #fff;
+  font-size: .7rem;
+  font-weight: 700;
+}
+.selected-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .78rem;
+  color: var(--accent-blue);
+  font-weight: 600;
+}
+.filter-chips {
+  display: flex;
+  gap: 6px;
+}
+.chip {
+  padding: 4px 12px;
+  font-size: .72rem;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: var(--transition);
+  background: none;
+  font-family: inherit;
+}
+.chip:hover, .chip.active { border-color: var(--accent-blue); color: var(--accent-blue); background: rgba(59,130,246,.08); }
+
+/* ===== NEWS ITEM ===== */
+.news-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 32px;
+}
+.news-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 18px 20px;
+  transition: var(--transition);
+  display: grid;
+  grid-template-columns: 40px 1fr auto;
+  gap: 16px;
+  align-items: start;
+  position: relative;
+  box-shadow: var(--shadow-sm);
+}
+.news-item:hover {
+  border-color: rgba(59,130,246,.3);
+  background: var(--bg-card-hover);
+  box-shadow: var(--shadow-sm);
+}
+.news-item.selected {
+  border-color: var(--accent-blue);
+  background: rgba(59,130,246,.04);
+  box-shadow: var(--shadow-glow-blue);
+}
+.news-check {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding-top: 2px;
+}
+.news-rank {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .68rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.news-body { flex: 1; min-width: 0; }
+.news-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+.news-source {
+  font-size: .7rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  letter-spacing: .02em;
+}
+.source-naver { background: rgba(3,199,90,.1); color: #059669; }
+.source-google { background: rgba(52,168,83,.1); color: #16a34a; }
+.source-spi { background: rgba(220,38,38,.08); color: #dc2626; }
+.source-thebell { background: rgba(13,148,136,.1); color: #0d9488; }
+.source-hankyung { background: rgba(217,119,6,.1); color: #b45309; }
+.source-mk { background: rgba(37,99,235,.1); color: #2563eb; }
+.news-date {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .7rem;
+  color: var(--text-muted);
+}
+.news-relation {
+  font-size: .65rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+.relation-competitor { background: rgba(220,38,38,.08); color: var(--accent-red); }
+.relation-prospect { background: rgba(5,150,105,.08); color: var(--accent-green); }
+.relation-affiliate { background: rgba(124,58,237,.08); color: var(--accent-purple); }
+.relation-market { background: rgba(59,130,246,.08); color: var(--accent-blue); }
+.news-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+  line-height: 1.5;
+  cursor: pointer;
+}
+.news-title:hover { color: var(--accent-blue); }
+.news-summary {
+  font-size: .82rem;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  margin-bottom: 10px;
+}
+.news-ai-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: .68rem;
+  color: #0891b2;
+  background: rgba(8,145,178,.06);
+  padding: 3px 8px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+.news-reason {
+  font-size: .75rem;
+  color: var(--text-secondary);
+  padding: 8px 12px;
+  background: #f8fafc;
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--accent-blue);
+  line-height: 1.5;
+}
+.news-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.news-action-btn {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: var(--transition);
+  font-size: .85rem;
+}
+.news-action-btn:hover {
+  border-color: var(--accent-blue);
+  color: var(--accent-blue);
+  background: rgba(59,130,246,.08);
+}
+
+/* ===== 개별 복사 버튼 바 ===== */
+.copy-bar {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px dashed var(--border);
+  flex-wrap: wrap;
+}
+.copy-btn {
+  font-size: .65rem;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all .15s;
+  letter-spacing: .02em;
+}
+.copy-btn:hover {
+  background: #e0f2fe;
+  border-color: var(--accent-blue);
+  color: var(--accent-blue);
+}
+.copy-btn:active {
+  transform: scale(.94);
+}
+.copy-btn.copied {
+  background: #dcfce7;
+  border-color: #16a34a;
+  color: #15803d;
+}
+.copy-btn-all {
+  background: rgba(59,130,246,.08);
+  border-color: rgba(59,130,246,.3);
+  color: var(--accent-blue);
+  margin-left: 2px;
+}
+.copy-btn-all:hover {
+  background: var(--accent-blue);
+  color: #fff;
+  border-color: var(--accent-blue);
+}
+
+/* ===== 차트 기간 버튼 ===== */
+.chart-period-btn {
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-input);
+  border-radius: 5px;
+  font-size: .72rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all .12s;
+}
+.chart-period-btn:hover { border-color: var(--accent-blue); color: var(--accent-blue); }
+.chart-period-btn.active {
+  background: var(--accent-blue);
+  border-color: var(--accent-blue);
+  color: #fff;
+}
+
+/* ===== 발송 히스토리 ===== */
+.hist-stat-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  position: relative;
+  overflow: hidden;
+}
+.hist-stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 3px;
+}
+.hist-stat-card.blue::before  { background: var(--accent-blue); }
+.hist-stat-card.green::before { background: var(--accent-green); }
+.hist-stat-card.amber::before { background: var(--accent-amber); }
+.hist-stat-card.purple::before{ background: #7c3aed; }
+.hist-stat-card.cyan::before  { background: var(--accent-cyan); }
+.hist-stat-label { font-size:.7rem; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px; }
+.hist-stat-value { font-size:1.6rem; font-weight:800; color:var(--text-primary); line-height:1; }
+.hist-stat-sub   { font-size:.72rem; color:var(--text-muted); margin-top:4px; }
+
+.hist-cat-tab {
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--bg-input);
+  font-size: .75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.hist-cat-tab:hover { border-color: var(--accent-blue); color: var(--accent-blue); }
+.hist-cat-tab.active {
+  background: var(--accent-blue);
+  border-color: var(--accent-blue);
+  color: #fff;
+}
+
+.hist-entry {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  margin-bottom: 12px;
+  overflow: hidden;
+  transition: box-shadow .15s;
+}
+.hist-entry:hover { box-shadow: var(--shadow-md); }
+.hist-entry-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  cursor: pointer;
+  user-select: none;
+}
+.hist-entry-header:hover { background: #f8fafc; }
+.hist-entry-body {
+  border-top: 1px solid var(--border);
+  padding: 16px 18px;
+  display: none;
+}
+.hist-entry-body.open { display: block; }
+.hist-article-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: .8rem;
+}
+.hist-article-row:last-child { border-bottom: none; }
+.hist-cat-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+.hist-day-bar {
+  flex: 1;
+  background: var(--accent-blue);
+  border-radius: 3px 3px 0 0;
+  min-height: 4px;
+  transition: height .3s;
+  position: relative;
+  cursor: default;
+}
+.hist-day-bar:hover::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1e293b;
+  color: #fff;
+  font-size: .65rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* ===== 키워드 관리 ===== */
+.kw-cat-tab {
+  padding: 7px 14px;
+  border-radius: 7px 7px 0 0;
+  border: 1px solid transparent;
+  border-bottom: none;
+  background: none;
+  cursor: pointer;
+  font-size: .78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+  transition: all .15s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.kw-cat-tab:hover { background: #fff; color: var(--text-primary); }
+.kw-cat-tab.active {
+  background: #fff;
+  color: var(--accent-blue);
+  border-color: var(--border);
+  position: relative;
+  z-index: 1;
+  margin-bottom: -1px;
+}
+.kw-cat-tab .kw-tab-count {
+  font-size: .65rem;
+  background: #e0f2fe;
+  color: var(--accent-blue);
+  border-radius: 8px;
+  padding: 1px 6px;
+  font-weight: 700;
+  min-width: 18px;
+  text-align: center;
+}
+.kw-cat-tab.active .kw-tab-count {
+  background: var(--accent-blue);
+  color: #fff;
+}
+.kw-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px 4px 12px;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 20px;
+  font-size: .78rem;
+  color: #0369a1;
+  font-weight: 500;
+  transition: all .15s;
+  cursor: default;
+}
+.kw-chip:hover {
+  background: #e0f2fe;
+  border-color: #7dd3fc;
+}
+.kw-chip.highlight {
+  background: #fef9c3;
+  border-color: #fde047;
+  color: #713f12;
+}
+.kw-chip-del {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #94a3b8;
+  font-size: .8rem;
+  padding: 0 1px;
+  line-height: 1;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .12s;
+}
+.kw-chip-del:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+.kw-chips-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding: 4px 0;
+}
+
+/* ===== CURATION EDITOR ===== */
+.curation-editor {
+  margin-top: 10px;
+  padding: 14px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  display: none;
+}
+.news-item.selected .curation-editor { display: block; }
+.curation-editor label {
+  font-size: .72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  margin-bottom: 6px;
+  display: block;
+}
+.curation-editor textarea {
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: .82rem;
+  padding: 10px 12px;
+  resize: vertical;
+  min-height: 60px;
+  line-height: 1.6;
+  transition: var(--transition);
+}
+.curation-editor textarea:focus {
+  outline: none;
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 3px rgba(59,130,246,.1);
+}
+.curation-editor-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* ===== BOTTOM ACTION BAR ===== */
+.bottom-bar {
+  position: sticky;
+  bottom: 0;
+  background: rgba(255,255,255,.95);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border);
+  padding: 14px 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 50;
+}
+.bottom-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.bottom-right {
+  display: flex;
+  gap: 10px;
+}
+.progress-info {
+  font-size: .82rem;
+  color: var(--text-secondary);
+}
+.progress-info strong { color: var(--accent-blue); }
+.progress-bar-mini {
+  width: 200px;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan));
+  border-radius: 2px;
+  transition: width .5s ease;
+}
+
+/* ===== PREVIEW PANEL (Right Slide) ===== */
+.preview-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.3);
+  z-index: 200;
+}
+.preview-overlay.active { display: block; }
+.preview-panel {
+  position: fixed;
+  right: -600px;
+  top: 0;
+  bottom: 0;
+  width: 580px;
+  background: #ffffff;
+  border-left: 1px solid var(--border);
+  z-index: 201;
+  transition: right .35s cubic-bezier(.4,0,.2,1);
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-lg);
+}
+.preview-panel.active { right: 0; }
+.preview-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.preview-header h3 { font-size: 1.1rem; font-weight: 700; }
+.preview-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+}
+.preview-email {
+  background: #ffffff;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.preview-email-header {
+  background: linear-gradient(135deg, #1e3a5f, #2d5a8e);
+  padding: 30px 28px;
+  text-align: center;
+}
+.preview-email-header h2 {
+  color: #fff;
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+.preview-email-header p {
+  color: rgba(255,255,255,.7);
+  font-size: .85rem;
+  margin-top: 8px;
+}
+.preview-email-body { padding: 24px; }
+.preview-indicator-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.preview-indicator-item {
+  flex: 1;
+  background: #f7f9fc;
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
+}
+.preview-indicator-item .label { font-size: .65rem; color: #8896b3; font-weight: 600; }
+.preview-indicator-item .value { font-size: 1rem; font-weight: 800; color: #1a2035; margin-top: 2px; }
+.preview-indicator-item .change { font-size: .7rem; margin-top: 2px; }
+.preview-indicator-item .change.up { color: #10b981; }
+.preview-indicator-item .change.down { color: #ef4444; }
+.preview-cat-section { margin-bottom: 20px; }
+.preview-cat-label {
+  font-size: .75rem;
+  font-weight: 800;
+  color: #1e3a5f;
+  padding: 6px 12px;
+  background: #edf2f7;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  letter-spacing: .04em;
+}
+.preview-news-item {
+  padding: 12px 0;
+  border-bottom: 1px solid #edf2f7;
+}
+.preview-news-item:last-child { border: none; }
+.preview-news-title {
+  font-size: .85rem;
+  font-weight: 700;
+  color: #1a2035;
+  margin-bottom: 4px;
+}
+.preview-news-summary {
+  font-size: .75rem;
+  color: #5a6a8a;
+  line-height: 1.5;
+}
+.preview-news-source { font-size: .65rem; color: #8896b3; margin-top: 4px; }
+.preview-cta-banner {
+  background: linear-gradient(135deg, #1e3a5f, #2d5a8e);
+  padding: 24px;
+  text-align: center;
+  margin-top: 20px;
+  border-radius: 8px;
+}
+.preview-cta-banner h3 { color: #fff; font-size: 1rem; font-weight: 700; }
+.preview-cta-banner p { color: rgba(255,255,255,.7); font-size: .78rem; margin-top: 6px; }
+.preview-cta-btn {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 10px 28px;
+  background: #fff;
+  color: #1e3a5f;
+  font-weight: 700;
+  font-size: .82rem;
+  border-radius: 6px;
+  text-decoration: none;
+}
+.preview-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* ===== MODAL ===== */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.4);
+  z-index: 300;
+  align-items: center;
+  justify-content: center;
+}
+.modal-overlay.active { display: flex; }
+.modal {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  width: 480px;
+  max-width: 90vw;
+  box-shadow: var(--shadow-lg);
+  animation: modalIn .25s ease;
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(20px) scale(.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.modal-header {
+  padding: 24px 28px 0;
+}
+.modal-header h3 { font-size: 1.15rem; font-weight: 700; }
+.modal-header p { font-size: .82rem; color: var(--text-muted); margin-top: 4px; }
+.modal-body { padding: 20px 28px; }
+.form-group { margin-bottom: 16px; }
+.form-group label {
+  font-size: .78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  display: block;
+}
+.form-input {
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: .85rem;
+  transition: var(--transition);
+}
+.form-input:focus {
+  outline: none;
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 3px rgba(59,130,246,.12);
+}
+.form-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238896b3' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+}
+.form-radio-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.form-radio {
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: .78rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: var(--transition);
+}
+.form-radio:hover, .form-radio.selected {
+  border-color: var(--accent-blue);
+  color: var(--accent-blue);
+  background: rgba(59,130,246,.08);
+}
+.modal-footer {
+  padding: 0 28px 24px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* ===== TOOLTIP ===== */
+[data-tooltip] {
+  position: relative;
+}
+[data-tooltip]:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: .7rem;
+  padding: 4px 10px;
+  border-radius: 4px;
+  white-space: nowrap;
+  border: 1px solid var(--border);
+  z-index: 50;
+}
+
+/* ===== SKELETON LOADING ===== */
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-card-hover) 50%, var(--bg-card) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+  border-radius: 4px;
+}
+@keyframes skeleton-loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1200px) {
+  .indicators-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 900px) {
+  .app-layout { grid-template-columns: 1fr; }
+  .sidebar { display: none; }
+  .indicators-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 700px) {
+  #histChartGrid { grid-template-columns: 1fr !important; }
+}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<div class="app-layout">
+  <!-- ===== TOP NAVIGATION ===== -->
+  <nav class="topnav">
+    <div class="topnav-left">
+      <div>
+        <div class="logo">CRE DAILY BRIEF</div>
+        <div class="logo-sub">Commercial Real Estate News Curation Platform</div>
+      </div>
+    </div>
+    <div class="topnav-center">
+      <button class="topnav-tab active" onclick="switchPage('curation', this)">📰 뉴스 큐레이션</button>
+      <button class="topnav-tab" onclick="switchPage('history', this)">📊 큐레이션 히스토리</button>
+      <button class="topnav-tab" onclick="switchPage('settings', this)">⚙️ 소스 설정</button>
+    </div>
+    <div class="topnav-right">
+      <div class="status-dot" id="flaskDot" data-tooltip="Flask 서버 연결 확인 중..." style="background:#94a3b8;"></div>
+      <span style="font-size:.75rem;color:var(--text-muted)" id="flaskStatus">연결 확인 중...</span>
+      <button class="btn btn-outline btn-sm" onclick="collectIndicators()" id="btnCollectIndicators" title="경제지표 재수집">📊 지표 수집</button>
+      <button class="btn btn-outline btn-sm" onclick="togglePreview()">👁 미리보기</button>
+      <div class="user-avatar">OR</div>
+    </div>
+  </nav>
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="sidebar">
+    <div class="sidebar-section-label">뉴스 카테고리</div>
+    <div class="sidebar-item active" onclick="sidebarSwitchCategory(this, 'all')">
+      <span class="sidebar-icon">📋</span>
+      <span>전체 뉴스</span>
+      <span class="sidebar-badge" id="sidebarBadgeAll">0</span>
+    </div>
+    <div class="sidebar-item" onclick="sidebarSwitchCategory(this, 'real_estate_market')">
+      <span class="sidebar-icon">📊</span>
+      <span>부동산 시장 &amp; 정책</span>
+      <span class="sidebar-badge" id="sidebarBadge_real_estate_market">0</span>
+    </div>
+    <div class="sidebar-item" onclick="sidebarSwitchCategory(this, 'office_lease')">
+      <span class="sidebar-icon">🏢</span>
+      <span>오피스 임대차</span>
+      <span class="sidebar-badge" id="sidebarBadge_office_lease">0</span>
+    </div>
+    <div class="sidebar-item" onclick="sidebarSwitchCategory(this, 'asset_transaction')">
+      <span class="sidebar-icon">💼</span>
+      <span>자산 매입·매각</span>
+      <span class="sidebar-badge" id="sidebarBadge_asset_transaction">0</span>
+    </div>
+    <div class="sidebar-item" onclick="sidebarSwitchCategory(this, 'corporate_space')">
+      <span class="sidebar-icon">🏗️</span>
+      <span>기업 공간 전략</span>
+      <span class="sidebar-badge" id="sidebarBadge_corporate_space">0</span>
+    </div>
+    <div class="sidebar-item" onclick="sidebarSwitchCategory(this, 'industrial_asset')">
+      <span class="sidebar-icon">🏭</span>
+      <span>산업용 자산</span>
+      <span class="sidebar-badge" id="sidebarBadge_industrial_asset">0</span>
+    </div>
+    <div class="sidebar-item" onclick="sidebarSwitchCategory(this, 'smart_esg')">
+      <span class="sidebar-icon">🌿</span>
+      <span>스마트 빌딩 &amp; ESG</span>
+      <span class="sidebar-badge" id="sidebarBadge_smart_esg">0</span>
+    </div>
+
+    <div class="sidebar-section-label" style="margin-top:24px">수집 소스</div>
+    <div class="sidebar-item" id="srcNaver">
+      <span class="sidebar-icon">🟢</span>
+      <span>네이버 뉴스 API</span>
+      <span class="sidebar-badge green" id="srcNaverBadge">—</span>
+    </div>
+    <div class="sidebar-item" id="srcGoogle">
+      <span class="sidebar-icon">🟡</span>
+      <span>Google CSE API</span>
+      <span class="sidebar-badge amber" id="srcGoogleBadge">—</span>
+    </div>
+    <div class="sidebar-item" onclick="showSourceModal('sites')" style="cursor:pointer;">
+      <span class="sidebar-icon">🌐</span>
+      <span>웹사이트 스크래핑</span>
+      <span class="sidebar-badge" id="srcSitesBadge" style="background:#64748b;">0</span>
+    </div>
+    <div class="sidebar-item" onclick="showSourceModal('rss')" style="cursor:pointer;">
+      <span class="sidebar-icon">📡</span>
+      <span>RSS / Feeds</span>
+      <span class="sidebar-badge" id="srcRssBadge" style="background:#64748b;">0</span>
+    </div>
+    <div class="sidebar-item" id="srcClaude" onclick="showSettingsModal()" style="cursor:pointer;">
+      <span class="sidebar-icon">🤖</span>
+      <span>Claude AI</span>
+      <span class="sidebar-badge" id="srcClaudeBadge" style="background:#94a3b8;">—</span>
+    </div>
+
+    <div class="sidebar-section-label" style="margin-top:24px">설정</div>
+    <div class="sidebar-item" onclick="showSettingsModal()" style="cursor:pointer;">
+      <span class="sidebar-icon">🔑</span>
+      <span>API 키 관리</span>
+    </div>
+    <div class="sidebar-item" onclick="showKeywordModal()" style="cursor:pointer;">
+      <span class="sidebar-icon">🏷️</span>
+      <span>키워드 관리</span>
+      <span class="sidebar-badge" id="kwTotalBadge" style="background:var(--accent-blue);">—</span>
+    </div>
+    <div class="sidebar-item">
+      <span class="sidebar-icon">🎨</span>
+      <span>HTML 템플릿</span>
+    </div>
+  </aside>
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <main class="main-content" id="mainContent">
+
+    <!-- Dashboard Header -->
+    <div class="dash-header">
+      <div>
+        <h1>오늘의 <span>CRE 뉴스 큐레이션</span></h1>
+        <div class="dash-date" id="dashDate">2026년 2월 11일 수요일 · 오전 9시 발행분</div>
+      </div>
+      <div class="dash-actions">
+        <button class="btn btn-outline" onclick="refreshNews()">
+          🔄 뉴스 재수집
+        </button>
+        <button class="btn btn-outline" onclick="aiRegenerate()">
+          🤖 AI 재분석
+        </button>
+        <button class="btn btn-primary btn-lg" onclick="togglePreview()">
+          👁 미리보기 & 발행
+        </button>
+      </div>
+    </div>
+
+    <!-- Economic Indicators -->
+    <div style="position:relative;">
+      <div class="indicators-grid" id="indicatorsGrid">
+        <!-- 동적 로딩: data/indicators.json -->
+        <div class="indicator-card neutral" style="grid-column: 1/-1; text-align:center; padding:24px;">
+          <div class="indicator-label" style="font-size:.9rem;">⏳ 경제지표 로딩 중...</div>
+          <div class="indicator-sub">data/indicators.json 을 불러오고 있습니다</div>
+        </div>
+      </div>
+      <!-- 지표 HTML 복사 버튼 -->
+      <button id="btnCopyIndicators" onclick="copyIndicatorsHtml()"
+        style="display:none; position:absolute; top:8px; right:8px;
+               font-size:.68rem; font-weight:600; padding:4px 10px;
+               background:rgba(255,255,255,.9); border:1px solid rgba(124,58,237,.35);
+               color:#7c3aed; border-radius:5px; cursor:pointer;
+               backdrop-filter:blur(4px); transition:all .15s; z-index:2;"
+        title="경제지표 HTML 복사">
+        📋 HTML 복사
+      </button>
+    </div>
+
+    <!-- Category Tabs (동적) -->
+    <div class="category-tabs" id="categoryTabs">
+      <button class="cat-tab active" data-cat="all" onclick="filterByCategory('all', this)">전체 <span class="tab-count" id="tabCountAll">0</span></button>
+      <button class="cat-tab" data-cat="real_estate_market" onclick="filterByCategory('real_estate_market', this)">📊 부동산 시장 &amp; 정책 <span class="tab-count" id="tabCount_real_estate_market">0</span></button>
+      <button class="cat-tab" data-cat="office_lease" onclick="filterByCategory('office_lease', this)">🏢 오피스 임대차 <span class="tab-count" id="tabCount_office_lease">0</span></button>
+      <button class="cat-tab" data-cat="asset_transaction" onclick="filterByCategory('asset_transaction', this)">💼 자산 매입·매각 <span class="tab-count" id="tabCount_asset_transaction">0</span></button>
+      <button class="cat-tab" data-cat="corporate_space" onclick="filterByCategory('corporate_space', this)">🏗️ 기업 공간 전략 <span class="tab-count" id="tabCount_corporate_space">0</span></button>
+      <button class="cat-tab" data-cat="industrial_asset" onclick="filterByCategory('industrial_asset', this)">🏭 산업용 자산 <span class="tab-count" id="tabCount_industrial_asset">0</span></button>
+      <button class="cat-tab" data-cat="smart_esg" onclick="filterByCategory('smart_esg', this)">🌿 스마트 빌딩 &amp; ESG <span class="tab-count" id="tabCount_smart_esg">0</span></button>
+    </div>
+
+    <!-- 뉴스 수집 컨트롤 바 -->
+    <div class="control-bar" style="flex-wrap:wrap; gap:10px;">
+      <div class="control-left" style="gap:12px; align-items:center;">
+        <div style="display:flex; align-items:center; gap:6px;">
+          <label style="font-size:.78rem; color:var(--text-secondary); white-space:nowrap;">📅 기간:</label>
+          <input type="date" id="dateFrom" class="form-input" style="width:140px; height:32px; font-size:.78rem; padding:4px 8px;">
+          <span style="font-size:.78rem; color:var(--text-muted);">~</span>
+          <input type="date" id="dateTo" class="form-input" style="width:140px; height:32px; font-size:.78rem; padding:4px 8px;">
+        </div>
+        <span class="selected-count" id="selectedCount">수집 대기</span>
+      </div>
+      <div class="control-right" style="gap:8px;">
+        <button class="btn btn-sm btn-outline" onclick="showSettingsModal()">⚙️ API 설정</button>
+        <button class="btn btn-sm btn-outline" onclick="document.getElementById('jsonFileInput').click()" title="news.json 파일을 직접 불러옵니다">
+          📂 JSON 불러오기
+        </button>
+        <input type="file" id="jsonFileInput" accept=".json" style="display:none;" onchange="loadNewsFromFile(this)">
+        <button class="btn btn-sm btn-primary" id="btnCollect" onclick="collectNews()" style="min-width:140px;">
+          🔍 뉴스 수집 시작
+        </button>
+      </div>
+    </div>
+
+    <!-- News List (동적 로딩) -->
+    <div class="news-list" id="newsList">
+      <div style="text-align:center; padding:60px 20px; color:var(--text-muted);">
+        <div style="font-size:2.5rem; margin-bottom:12px;">📰</div>
+        <div style="font-size:.95rem; font-weight:600; color:var(--text-secondary); margin-bottom:8px;">뉴스를 수집해주세요</div>
+        <div style="font-size:.8rem; line-height:1.7;">
+          1. <strong>⚙️ API 설정</strong>에서 Naver / Google / Claude API 키를 입력<br>
+          2. <strong>📅 기간</strong>을 선택하고 <strong>🔍 뉴스 수집 시작</strong> 클릭<br>
+          또는 터미널에서 <code style="background:#f1f5f9; padding:2px 6px; border-radius:4px; font-size:.75rem;">python collect_news.py</code> 실행 후 새로고침
+        </div>
+      </div>
+    </div>
+
+
+    <!-- Bottom Action Bar -->
+    <div class="bottom-bar">
+      <div class="bottom-left">
+        <div class="select-all-wrap" style="display:flex; align-items:center; gap:8px;">
+          <div class="checkbox-custom" id="selectAllCheckbox" onclick="toggleSelectAll()"></div>
+          <span style="font-size:.78rem; color:var(--text-secondary);">전체 선택</span>
+        </div>
+        <div class="progress-info" id="progressInfo">
+          선택: <strong>0</strong> / <span id="totalNewsCount">0</span>건
+        </div>
+        <div class="progress-bar-mini">
+          <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+        </div>
+      </div>
+      <div class="bottom-right">
+        <button class="btn btn-outline" onclick="aiReanalyzeSelected()" id="btnAiReanalyze" disabled>
+          🤖 AI 재분석 (<span id="reanalyzeCount">0</span>건)
+        </button>
+        <button class="btn btn-outline" onclick="exportNewsExcel()" id="btnExcelExport" disabled
+          style="border-color:#16a34a; color:#16a34a;">
+          📥 엑셀 다운로드
+        </button>
+        <button class="btn btn-outline" onclick="copyBodyHtml()" id="btnCopyHtml" disabled
+          style="border-color:#7c3aed; color:#7c3aed;">
+          📋 HTML 본문 복사
+        </button>
+        <button class="btn btn-success btn-lg" onclick="generateFinalHTML()" id="btnFinalize" disabled>
+          ✅ 마감 확정 & HTML 생성
+        </button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ===== HISTORY PAGE ===== -->
+  <main class="main-content" id="historyPage" style="display:none;">
+
+    <!-- 헤더 -->
+    <div class="dash-header">
+      <div>
+        <h1>큐레이션 <span>히스토리</span></h1>
+        <div class="dash-date" id="historySubtitle">마감 확정 기준 누적 통계</div>
+      </div>
+      <div class="dash-actions">
+        <button class="btn btn-outline btn-sm" onclick="clearAllHistory()" style="color:#dc2626; border-color:#dc2626;">
+          🗑 전체 삭제
+        </button>
+        <button class="btn btn-outline btn-sm" onclick="exportHistoryJson()">
+          📤 내보내기
+        </button>
+      </div>
+    </div>
+
+    <!-- 요약 스탯 카드 -->
+    <div id="histStatCards" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; margin-bottom:20px;"></div>
+
+    <!-- 요일별 큐레이션 추이 (복합 차트) -->
+    <div style="background:#fff; border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px; margin-bottom:20px;">
+
+      <!-- 헤더 + 기간 필터 -->
+      <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
+        <div style="font-size:.85rem; font-weight:700; color:var(--text-primary);">📅 요일별 큐레이션 추이</div>
+        <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+          <!-- 기간 프리셋 -->
+          <div style="display:flex; gap:4px;">
+            <button class="chart-period-btn active" data-period="week"  onclick="setChartPeriod('week',  this)">1주</button>
+            <button class="chart-period-btn"        data-period="month" onclick="setChartPeriod('month', this)">1달</button>
+            <button class="chart-period-btn"        data-period="all"   onclick="setChartPeriod('all',   this)">전체</button>
+            <button class="chart-period-btn"        data-period="custom" onclick="setChartPeriod('custom', this)">직접입력</button>
+          </div>
+          <!-- 직접 입력 (hidden) -->
+          <div id="chartCustomRange" style="display:none; align-items:center; gap:4px;">
+            <input type="date" id="chartDateFrom" class="form-input" style="height:28px; font-size:.72rem; padding:2px 6px; width:120px;">
+            <span style="font-size:.72rem; color:var(--text-muted);">~</span>
+            <input type="date" id="chartDateTo"   class="form-input" style="height:28px; font-size:.72rem; padding:2px 6px; width:120px;">
+            <button class="btn btn-sm btn-primary" style="height:28px; padding:0 10px; font-size:.72rem;" onclick="applyCustomPeriod()">적용</button>
+          </div>
+          <!-- 기간 표시 -->
+          <span id="chartPeriodLabel" style="font-size:.7rem; color:var(--text-muted); white-space:nowrap;"></span>
+        </div>
+      </div>
+
+      <!-- 차트 범례 -->
+      <div id="chartLegend" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px;"></div>
+
+      <!-- 차트 영역 -->
+      <div id="histChartGrid" style="display:grid; grid-template-columns:1fr 220px; gap:20px; align-items:center;">
+        <!-- 스택 막대 + 라인 복합 차트 -->
+        <div style="position:relative; height:220px;">
+          <canvas id="histBarChart"></canvas>
+        </div>
+        <!-- 도넛 차트 -->
+        <div style="position:relative; height:220px;">
+          <canvas id="histDonutChart"></canvas>
+          <div id="histDonutCenter" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center; pointer-events:none;">
+            <div style="font-size:1.3rem; font-weight:800; color:var(--text-primary); line-height:1;" id="histDonutTotal">—</div>
+            <div style="font-size:.62rem; color:var(--text-muted); margin-top:2px;">총 선별</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 요일별 요약 수치 (바 차트 아래) -->
+      <div id="histDayChart" style="display:none;"></div>
+      <div id="histDayLabels" style="display:none;"></div>
+    </div>
+
+    <!-- 카테고리별 분포 -->
+    <div style="background:#fff; border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px; margin-bottom:20px;">
+      <div style="font-size:.85rem; font-weight:700; color:var(--text-primary); margin-bottom:14px;">🗂 카테고리별 기사 선택 분포</div>
+      <div id="histCatBars"></div>
+    </div>
+
+    <!-- 카테고리 필터 탭 -->
+    <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px;" id="histCatTabs">
+      <button class="hist-cat-tab active" data-cat="all" onclick="filterHistory('all', this)">전체</button>
+      <button class="hist-cat-tab" data-cat="real_estate_market" onclick="filterHistory('real_estate_market', this)">📊 부동산 시장</button>
+      <button class="hist-cat-tab" data-cat="office_lease" onclick="filterHistory('office_lease', this)">🏢 오피스 임대차</button>
+      <button class="hist-cat-tab" data-cat="asset_transaction" onclick="filterHistory('asset_transaction', this)">💼 자산 매입·매각</button>
+      <button class="hist-cat-tab" data-cat="corporate_space" onclick="filterHistory('corporate_space', this)">🏗️ 기업 공간</button>
+      <button class="hist-cat-tab" data-cat="industrial_asset" onclick="filterHistory('industrial_asset', this)">🏭 산업용 자산</button>
+      <button class="hist-cat-tab" data-cat="smart_esg" onclick="filterHistory('smart_esg', this)">🌿 스마트&ESG</button>
+    </div>
+
+    <!-- 히스토리 목록 -->
+    <div id="histList"></div>
+
+    <!-- 빈 상태 -->
+    <div id="histEmpty" style="display:none; text-align:center; padding:60px 20px; color:var(--text-muted);">
+      <div style="font-size:3rem; margin-bottom:12px;">📭</div>
+      <div style="font-size:.95rem; font-weight:600; margin-bottom:6px;">마감 확정 기록이 없습니다</div>
+      <div style="font-size:.8rem;">뉴스 큐레이션 탭에서 기사를 선택하고<br>✅ 마감 확정 버튼을 누르면 여기에 기록됩니다</div>
+    </div>
+
+  </main>
+
+</div><!-- /app-layout -->
+
+<!-- ===== PREVIEW PANEL ===== -->
+<div class="preview-overlay" id="previewOverlay" onclick="togglePreview()"></div>
+<div class="preview-panel" id="previewPanel">
+  <div class="preview-header">
+    <h3>📧 발행 미리보기</h3>
+    <div style="display:flex; gap:8px;">
+      <button class="btn btn-sm btn-primary" onclick="generateFinalHTML()">📥 HTML 다운로드</button>
+      <button class="btn btn-sm btn-outline" onclick="togglePreview()">✕ 닫기</button>
+    </div>
+  </div>
+  <div class="preview-body" id="previewBody">
+    <div class="preview-email">
+      <div class="preview-email-header">
+        <h2>🏢 CRE DAILY BRIEF</h2>
+        <p id="previewDate">2026년 2월 20일 · 상업용 부동산 뉴스 큐레이션</p>
+      </div>
+      <div class="preview-email-body">
+        <div class="preview-indicator-row" id="previewIndicators">
+          <div class="preview-indicator-item">
+            <div class="label">로딩 중...</div>
+            <div class="value">—</div>
+          </div>
+        </div>
+        <!-- 선택된 뉴스가 여기에 동적 렌더링 -->
+        <div id="previewNewsList" style="margin-top:16px;">
+          <p style="text-align:center; color:#94a3b8; padding:24px;">뉴스를 선택하면 미리보기가 표시됩니다</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="preview-footer">
+    <button class="btn btn-outline" onclick="togglePreview()">닫기</button>
+    <button class="btn btn-primary" onclick="generateFinalHTML()">📥 HTML 다운로드</button>
+  </div>
+</div>
+
+<!-- ===== CONTACT MODAL ===== -->
+<div class="modal-overlay" id="contactModal">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h3>💼 CRE팀 문의하기</h3>
+      <p>상업용 부동산 임대차 컨설팅 전문팀이 24시간 내 연락드립니다.</p>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>회사명 *</label>
+        <input type="text" class="form-input" placeholder="귀사명을 입력해주세요">
+      </div>
+      <div class="form-group">
+        <label>담당자명 *</label>
+        <input type="text" class="form-input" placeholder="담당자 성함">
+      </div>
+      <div class="form-group">
+        <label>연락처 *</label>
+        <input type="tel" class="form-input" placeholder="010-0000-0000">
+      </div>
+      <div class="form-group">
+        <label>이메일</label>
+        <input type="email" class="form-input" placeholder="email@company.com">
+      </div>
+      <div class="form-group">
+        <label>문의 영역 *</label>
+        <div class="form-radio-group">
+          <div class="form-radio selected" onclick="selectRadio(this)">🏢 사옥 이전</div>
+          <div class="form-radio" onclick="selectRadio(this)">📐 오피스 확장</div>
+          <div class="form-radio" onclick="selectRadio(this)">📉 오피스 축소</div>
+          <div class="form-radio" onclick="selectRadio(this)">💰 빌딩 매매</div>
+          <div class="form-radio" onclick="selectRadio(this)">🛍 리테일 임대</div>
+          <div class="form-radio" onclick="selectRadio(this)">📦 물류센터</div>
+          <div class="form-radio" onclick="selectRadio(this)">📊 시장 분석</div>
+          <div class="form-radio" onclick="selectRadio(this)">🔄 기타</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>문의 내용</label>
+        <textarea class="form-input" rows="3" placeholder="간단한 문의 내용을 입력해주세요 (선택)"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="hideContactModal()">취소</button>
+      <button class="btn btn-primary btn-lg" onclick="submitContact()">📩 문의 제출</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== API SETTINGS MODAL ===== -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-header">
+      <h3>⚙️ API 키 설정</h3>
+      <button class="btn btn-sm btn-outline" onclick="hideSettingsModal()">✕</button>
+    </div>
+    <div class="modal-body" style="max-height:65vh; overflow-y:auto;">
+      <p style="font-size:.78rem; color:var(--text-secondary); margin-bottom:16px; line-height:1.6;">
+        API 키는 브라우저 localStorage에 저장됩니다.<br>
+        터미널 실행 시에는 <code style="background:#f1f5f9; padding:1px 4px; border-radius:3px;">config.json</code> 파일을 사용합니다.
+      </p>
+
+      <!-- Naver -->
+      <div style="background:#f8fafc; border-radius:8px; padding:14px; margin-bottom:12px;">
+        <div style="font-size:.72rem; font-weight:700; color:#059669; text-transform:uppercase; letter-spacing:.06em; margin-bottom:10px;">🟢 Naver News API</div>
+        <div class="form-group" style="margin-bottom:8px;">
+          <label style="font-size:.75rem; font-weight:600;">Client ID</label>
+          <input type="text" class="form-input" id="cfgNaverId" placeholder="네이버 개발자센터에서 발급">
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label style="font-size:.75rem; font-weight:600;">Client Secret</label>
+          <input type="password" class="form-input" id="cfgNaverSecret" placeholder="네이버 Client Secret">
+        </div>
+      </div>
+
+      <!-- Google -->
+      <div style="background:#f8fafc; border-radius:8px; padding:14px; margin-bottom:12px;">
+        <div style="font-size:.72rem; font-weight:700; color:#2563eb; text-transform:uppercase; letter-spacing:.06em; margin-bottom:10px;">🔵 Google CSE API</div>
+        <div class="form-group" style="margin-bottom:8px;">
+          <label style="font-size:.75rem; font-weight:600;">API Key</label>
+          <input type="text" class="form-input" id="cfgGoogleKey" placeholder="Google Cloud Console에서 발급">
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label style="font-size:.75rem; font-weight:600;">Search Engine ID</label>
+          <input type="text" class="form-input" id="cfgGoogleCse" placeholder="Custom Search Engine ID">
+        </div>
+      </div>
+
+      <!-- Claude -->
+      <div style="background:#faf5ff; border:1px solid #e9d5ff; border-radius:8px; padding:14px; margin-bottom:0;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <div style="font-size:.72rem; font-weight:700; color:#7c3aed; text-transform:uppercase; letter-spacing:.06em;">🟣 Claude AI API</div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span id="claudeTestStatus" style="font-size:.72rem; color:#94a3b8;">미확인</span>
+            <button class="btn btn-sm btn-outline" onclick="testClaudeAPI()" id="btnTestClaude"
+              style="font-size:.72rem; padding:4px 10px; border-color:#7c3aed; color:#7c3aed;">
+              🔌 연결 테스트
+            </button>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:8px;">
+          <label style="font-size:.75rem; font-weight:600;">API Key</label>
+          <div style="position:relative;">
+            <input type="password" class="form-input" id="cfgClaudeKey" placeholder="Anthropic Console에서 발급"
+              style="padding-right:40px;">
+            <button onclick="toggleClaudeKeyVisibility()" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:#94a3b8; font-size:.85rem;" id="btnToggleKey">👁</button>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label style="font-size:.75rem; font-weight:600;">모델</label>
+          <select class="form-input" id="cfgClaudeModel">
+            <option value="claude-sonnet-4-20250514">Claude Sonnet 4 (기본 권장)</option>
+            <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (빠름 · 저비용)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="hideSettingsModal()">취소</button>
+      <button class="btn btn-outline" onclick="exportConfigJson()">📋 config.json 복사</button>
+      <button class="btn btn-primary" onclick="saveSettings()">💾 저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SOURCE MANAGEMENT MODAL ===== -->
+<div class="modal-overlay" id="sourceModal">
+  <div class="modal" style="max-width:560px;" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h3 id="sourceModalTitle">🌐 수집 소스 관리</h3>
+      <button class="btn btn-sm btn-outline" onclick="hideSourceModal()">✕</button>
+    </div>
+    <div class="modal-body" style="max-height:60vh; overflow-y:auto;">
+
+      <!-- 탭 -->
+      <div style="display:flex; gap:4px; background:#f1f5f9; border-radius:8px; padding:4px; margin-bottom:16px;">
+        <button class="btn btn-sm" id="srcTabSites" onclick="switchSourceTab('sites')"
+          style="flex:1; background:var(--accent-blue); color:#fff; border-radius:5px;">🌐 웹사이트</button>
+        <button class="btn btn-sm" id="srcTabRss" onclick="switchSourceTab('rss')"
+          style="flex:1; background:none; color:var(--text-muted); border:none;">📡 RSS 피드</button>
+      </div>
+
+      <!-- 웹사이트 탭 -->
+      <div id="srcPanelSites">
+        <p style="font-size:.78rem; color:var(--text-secondary); margin-bottom:12px; line-height:1.6;">
+          추가할 뉴스 사이트 URL을 입력하세요. collect_news.py가 해당 사이트를 스크래핑합니다.<br>
+          <span style="color:#d97706;">⚠️ 실제 스크래핑 연동은 백엔드 추가 작업이 필요합니다.</span>
+        </p>
+        <div style="display:flex; gap:8px; margin-bottom:12px;">
+          <input type="url" id="newSiteUrl" class="form-input" placeholder="https://www.thebell.co.kr" style="flex:1;">
+          <input type="text" id="newSiteName" class="form-input" placeholder="더벨" style="width:100px;">
+          <button class="btn btn-sm btn-primary" onclick="addSource('site')">+ 추가</button>
+        </div>
+        <div id="sitesList" style="display:flex; flex-direction:column; gap:6px;"></div>
+      </div>
+
+      <!-- RSS 피드 탭 -->
+      <div id="srcPanelRss" style="display:none;">
+        <p style="font-size:.78rem; color:var(--text-secondary); margin-bottom:12px; line-height:1.6;">
+          RSS 피드 URL을 추가하세요. feedparser로 자동 수집됩니다.<br>
+          <span style="color:#d97706;">⚠️ collect_news.py에 feedparser 연동이 필요합니다.</span>
+        </p>
+        <div style="display:flex; gap:8px; margin-bottom:12px;">
+          <input type="url" id="newRssUrl" class="form-input" placeholder="https://example.com/rss.xml" style="flex:1;">
+          <input type="text" id="newRssName" class="form-input" placeholder="매체명" style="width:100px;">
+          <button class="btn btn-sm btn-primary" onclick="addSource('rss')">+ 추가</button>
+        </div>
+        <div id="rssList" style="display:flex; flex-direction:column; gap:6px;"></div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="hideSourceModal()">닫기</button>
+      <button class="btn btn-primary" onclick="saveSourceList()">💾 저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 마감 확정 결과 모달 ===== -->
+<div class="modal-overlay" id="finalizeModal">
+  <div class="modal" style="max-width:600px; max-height:90vh;" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h3>✅ 마감 확정 완료</h3>
+      <button class="btn btn-sm btn-outline" onclick="hideFinalizeModal()">✕</button>
+    </div>
+    <div class="modal-body" style="max-height:65vh; overflow-y:auto;" id="finalizeModalBody">
+    </div>
+    <div class="modal-footer" style="flex-wrap:wrap; gap:8px; justify-content:space-between;">
+      <button class="btn btn-outline btn-sm" onclick="hideFinalizeModal(); switchPage('history', document.querySelectorAll('.topnav-tab')[1]);"
+        style="color:#3b82f6; border-color:#3b82f6;">
+        📊 히스토리에서 확인
+      </button>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="btn btn-outline" onclick="hideFinalizeModal()">닫기</button>
+        <button class="btn btn-outline" onclick="copyBodyHtml('modalCopyBtn')" id="modalCopyBtn" style="border-color:#7c3aed; color:#7c3aed;">
+          📋 HTML 본문 복사
+        </button>
+        <button class="btn btn-success btn-lg" onclick="downloadFinalHTML()">
+          📥 HTML 다운로드
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== KEYWORD MANAGEMENT MODAL ===== -->
+<div class="modal-overlay" id="keywordModal" style="z-index:1100;">
+  <div class="modal" style="max-width:780px; width:96vw; max-height:90vh; display:flex; flex-direction:column;" onclick="event.stopPropagation()">
+
+    <!-- 헤더 -->
+    <div class="modal-header" style="flex-shrink:0;">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <h3 style="margin:0;">🏷️ 카테고리 키워드 관리</h3>
+        <span id="kwModalTotal" style="font-size:.75rem; color:var(--text-muted); background:#f1f5f9; padding:2px 8px; border-radius:10px;">—</span>
+      </div>
+      <div style="display:flex; gap:6px; align-items:center;">
+        <button class="btn btn-sm btn-outline" onclick="document.getElementById('kwXlsxInput').click()" title="엑셀 파일 불러오기">📥 엑셀 불러오기</button>
+        <input type="file" id="kwXlsxInput" accept=".xlsx,.xls" style="display:none;" onchange="importKeywordsFromXlsx(this)">
+        <button class="btn btn-sm btn-outline" onclick="exportKeywordsJson()" title="keywords.json 다운로드">📤 JSON 내보내기</button>
+        <button class="btn btn-sm btn-outline" onclick="resetKeywordsToDefault()" title="기본값으로 초기화" style="color:#d97706; border-color:#d97706;">↺ 초기화</button>
+        <button class="btn btn-sm btn-outline" onclick="hideKeywordModal()">✕</button>
+      </div>
+    </div>
+
+    <!-- 카테고리 탭 -->
+    <div id="kwCatTabs" style="display:flex; gap:4px; padding:12px 20px 0; background:#f8fafc; border-bottom:1px solid var(--border); flex-shrink:0; overflow-x:auto; flex-wrap:nowrap;">
+    </div>
+
+    <!-- 검색 바 -->
+    <div style="padding:12px 20px; border-bottom:1px solid var(--border); flex-shrink:0; display:flex; gap:8px; align-items:center;">
+      <div style="position:relative; flex:1; max-width:300px;">
+        <span style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:.85rem;">🔍</span>
+        <input type="text" id="kwSearchInput" placeholder="키워드 검색..." class="form-input"
+          style="padding-left:32px; height:32px; font-size:.8rem;"
+          oninput="renderKeywordChips()">
+      </div>
+      <span id="kwCatCount" style="font-size:.75rem; color:var(--text-muted); white-space:nowrap;"></span>
+    </div>
+
+    <!-- 키워드 칩 영역 -->
+    <div id="kwChipsArea" style="flex:1; overflow-y:auto; padding:16px 20px; min-height:200px;">
+    </div>
+
+    <!-- 키워드 추가 입력 -->
+    <div style="padding:14px 20px; border-top:1px solid var(--border); background:#f8fafc; flex-shrink:0;">
+      <div style="font-size:.72rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:8px;">+ 키워드 추가</div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <input type="text" id="kwAddInput" class="form-input" placeholder="새 키워드 입력 후 Enter 또는 + 버튼"
+          style="flex:1; min-width:200px; height:34px; font-size:.82rem;"
+          onkeydown="if(event.key==='Enter') addKeywordFromInput()">
+        <button class="btn btn-sm btn-primary" onclick="addKeywordFromInput()" style="height:34px; padding:0 16px;">+ 추가</button>
+        <button class="btn btn-sm btn-outline" onclick="pasteKeywords()" title="쉼표/줄바꿈으로 구분된 키워드 일괄 추가" style="height:34px;">📋 일괄 입력</button>
+      </div>
+      <div style="font-size:.7rem; color:var(--text-muted); margin-top:6px;">쉼표(,) 또는 줄바꿈으로 구분하면 여러 개를 한번에 추가할 수 있습니다</div>
+    </div>
+
+    <!-- 푸터 -->
+    <div class="modal-footer" style="flex-shrink:0; justify-content:space-between;">
+      <div style="font-size:.75rem; color:var(--text-muted);" id="kwSaveStatus">변경사항은 자동 저장됩니다</div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-outline" onclick="hideKeywordModal()">닫기</button>
+        <button class="btn btn-primary" onclick="saveKeywords(); hideKeywordModal(); showToast('✅ 키워드 저장 완료');">💾 저장 & 닫기</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 일괄 입력 서브 모달 -->
+<div class="modal-overlay" id="kwBulkModal" style="z-index:1200;">
+  <div class="modal" style="max-width:460px;" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h3>📋 키워드 일괄 입력</h3>
+      <button class="btn btn-sm btn-outline" onclick="document.getElementById('kwBulkModal').classList.remove('active')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:.78rem; color:var(--text-secondary); margin-bottom:10px;">
+        쉼표(,) 또는 줄바꿈으로 구분해서 입력하세요.<br>현재 선택된 카테고리에 일괄 추가됩니다.
+      </div>
+      <textarea id="kwBulkText" class="form-input" style="width:100%; height:160px; resize:vertical; font-size:.82rem; line-height:1.7;"
+        placeholder="키워드1, 키워드2, 키워드3&#10;또는&#10;키워드1&#10;키워드2&#10;키워드3"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="document.getElementById('kwBulkModal').classList.remove('active')">취소</button>
+      <button class="btn btn-primary" onclick="applyBulkKeywords()">✅ 추가</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TOAST NOTIFICATION ===== -->
+<div id="toast" style="
+  position: fixed;
+  bottom: -60px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--accent-green);
+  color: #fff;
+  padding: 12px 28px;
+  border-radius: var(--radius-md);
+  font-size: .85rem;
+  font-weight: 600;
+  box-shadow: var(--shadow-lg);
+  transition: bottom .4s cubic-bezier(.4,0,.2,1);
+  z-index: 999;
+"></div>
+
+<script>
+// ===== 단어 경계 컷 헬퍼 (하드컷 방지) =====
+function wordCut(text, maxLen) {
+  if (!text) return '';
+  text = text.trim();
+  if (text.length <= maxLen) return text;
+  const cut = text.slice(0, maxLen + 1);
+  const sp  = cut.lastIndexOf(' ');
+  if (sp >= 3) return text.slice(0, sp).trim();
+  // 공백 없는 긴 단어 → 다음 공백까지 (최대 maxLen+5)
+  const nextSp = text.indexOf(' ', maxLen);
+  if (nextSp > 0 && nextSp <= maxLen + 5) return text.slice(0, nextSp).trim();
+  return text.slice(0, maxLen).trim();
+}
+
+// ===== 텍스트 정제 헬퍼 =====
+function decodeEntities(text) {
+  if (!text) return '';
+  const ta = document.createElement('textarea');
+  ta.innerHTML = text;
+  let t = ta.value;
+  // 디코딩 후 남은 따옴표 제거
+  t = t.replace(/[""]/g, '').replace(/&[a-zA-Z#0-9]+;/g, '');
+  // 뒤에 붙는 언론사·기자 꼬리 제거
+  t = t.replace(/\s+[가-힣a-zA-Z]{2,20}(뉴스|코리아|미디어|신문|투데이|일보|경제|타임즈?)$/, '');
+  t = t.replace(/\s+[가-힣]{2,4}\s+(기자|특파원|선임기자)\s*$/, '');
+  t = t.replace(/\s*=\s*[가-힣a-zA-Z\s]{1,20}$/, '');
+  t = t.replace(/\s*\[[^\]]{1,20}\]\s*$/, '');
+  t = t.replace(/\s+/g, ' ').trim();
+  return t;
+}
+
+// ===== State =====
+const state = {
+  newsData: null,
+  allItems: [],        // 전체 뉴스 아이템 (flat)
+  selectedIds: new Set(), // 선택된 hash_id
+  currentCategory: 'all',
+  activeCategory: 'all', // 카테고리 탭 필터
+  totalNews: 0,
+  isAiRunning: false,
+};
+
+// 카테고리 메타 정보
+const CAT_META = {
+  all:                 { label: '전체',              icon: '📋' },
+  real_estate_market:  { label: '부동산 시장 & 정책', icon: '📊' },
+  office_lease:        { label: '오피스 임대차',       icon: '🏢' },
+  asset_transaction:   { label: '자산 매입·매각',      icon: '💼' },
+  corporate_space:     { label: '기업 공간 전략',      icon: '🏗️' },
+  industrial_asset:    { label: '산업용 자산',         icon: '🏭' },
+  smart_esg:           { label: '스마트 빌딩 & ESG',   icon: '🌿' },
+};
+
+// ===== Date Setup =====
+function initDateRange() {
+  const today = new Date();
+  const threeDaysAgo = new Date(today);
+  threeDaysAgo.setDate(today.getDate() - 3);
+  document.getElementById('dateTo').value = today.toISOString().split('T')[0];
+  document.getElementById('dateFrom').value = threeDaysAgo.toISOString().split('T')[0];
+}
+
+function updateDate() {
+  const now = new Date();
+  const options = { year:'numeric', month:'long', day:'numeric', weekday:'long' };
+  const dateStr = now.toLocaleDateString('ko-KR', options);
+  const hour = now.getHours();
+  const period = hour < 12 ? '오전' : '오후';
+  const displayHour = hour > 12 ? hour - 12 : hour;
+  document.getElementById('dashDate').textContent = `${dateStr} · ${period} ${displayHour}시 기준`;
+}
+updateDate();
+initDateRange();
+
+// ===== Settings Modal =====
+function showSettingsModal() {
+  document.getElementById('settingsModal').classList.add('active');
+  document.getElementById('cfgNaverId').value = localStorage.getItem('cre_naver_id') || '';
+  document.getElementById('cfgNaverSecret').value = localStorage.getItem('cre_naver_secret') || '';
+  document.getElementById('cfgGoogleKey').value = localStorage.getItem('cre_google_key') || '';
+  document.getElementById('cfgGoogleCse').value = localStorage.getItem('cre_google_cse') || '';
+  document.getElementById('cfgClaudeKey').value = localStorage.getItem('cre_claude_key') || '';
+  document.getElementById('cfgClaudeModel').value = localStorage.getItem('cre_claude_model') || 'claude-sonnet-4-20250514';
+}
+function hideSettingsModal() { document.getElementById('settingsModal').classList.remove('active'); }
+
+function saveSettings() {
+  localStorage.setItem('cre_naver_id', document.getElementById('cfgNaverId').value);
+  localStorage.setItem('cre_naver_secret', document.getElementById('cfgNaverSecret').value);
+  localStorage.setItem('cre_google_key', document.getElementById('cfgGoogleKey').value);
+  localStorage.setItem('cre_google_cse', document.getElementById('cfgGoogleCse').value);
+  localStorage.setItem('cre_claude_key', document.getElementById('cfgClaudeKey').value);
+  localStorage.setItem('cre_claude_model', document.getElementById('cfgClaudeModel').value);
+  hideSettingsModal();
+  showToast('✅ API 설정이 저장되었습니다');
+}
+
+function exportConfigJson() {
+  const config = {
+    NAVER_CLIENT_ID: document.getElementById('cfgNaverId').value,
+    NAVER_CLIENT_SECRET: document.getElementById('cfgNaverSecret').value,
+    GOOGLE_API_KEY: document.getElementById('cfgGoogleKey').value,
+    GOOGLE_SEARCH_ENGINE_ID: document.getElementById('cfgGoogleCse').value,
+    CLAUDE_API_KEY: document.getElementById('cfgClaudeKey').value,
+    CLAUDE_MODEL: document.getElementById('cfgClaudeModel').value
+  };
+  navigator.clipboard.writeText(JSON.stringify(config, null, 2)).then(() => {
+    showToast('📋 config.json 클립보드 복사됨');
+  });
+}
+
+// ================================================================
+//  Flask 서버 감지
+// ================================================================
+let isFlaskMode = false;
+
+async function detectFlask() {
+  try {
+    const resp = await fetch('/api/status', { method: 'GET' });
+    isFlaskMode = resp.ok;
+  } catch {
+    isFlaskMode = false;
+  }
+}
+
+// ================================================================
+//  경제지표 수집 (Flask SSE)
+// ================================================================
+async function collectIndicators() {
+  if (!isFlaskMode) {
+    showToast('⚠️ Flask 서버 미실행 — python app.py 먼저 실행하세요');
+    return;
+  }
+  showToast('📊 경제지표 수집 시작...');
+  await runCollectStream('/api/collect/indicators', {}, 'indicators');
+  loadIndicators();
+}
+
+// ================================================================
+//  뉴스 수집 (Flask SSE 또는 터미널 안내 fallback)
+// ================================================================
+function collectNews() {
+  const dateFrom = document.getElementById('dateFrom').value;
+  const dateTo   = document.getElementById('dateTo').value;
+  if (!dateFrom || !dateTo) { showToast('⚠️ 기간을 선택해주세요'); return; }
+
+  if (isFlaskMode) {
+    // Flask 모드: 버튼 클릭으로 직접 수집
+    runCollectStream('/api/collect/news', { date_from: dateFrom, date_to: dateTo }, 'news');
+  } else {
+    // Fallback: 터미널 명령어 안내
+    const btn = document.getElementById('btnCollect');
+    btn.disabled = true;
+    btn.innerHTML = '⏳ 대기 중...';
+    const cmd = `python collect_news.py --from-date ${dateFrom} --to-date ${dateTo}`;
+    navigator.clipboard.writeText(cmd).catch(() => {});
+
+    document.getElementById('newsList').innerHTML = `
+      <div style="text-align:center; padding:40px 20px;">
+        <div style="font-size:2rem; margin-bottom:12px;">⏳</div>
+        <div style="font-size:.9rem; font-weight:600; color:var(--text-secondary); margin-bottom:12px;">
+          Flask 서버가 실행되지 않아 터미널에서 직접 실행해야 합니다
+        </div>
+        <div style="background:#f1f5f9; border-radius:8px; padding:16px; font-family:monospace; font-size:.8rem; color:#1e293b; margin:16px auto; max-width:500px; text-align:left;">
+          <div style="color:#94a3b8; margin-bottom:4px;">$ cd cre-daily-brief</div>
+          <div style="color:#94a3b8; margin-bottom:4px;">$ python app.py  ← Flask 서버 먼저 실행</div>
+          <div style="font-weight:700;">${cmd}</div>
+        </div>
+        <button class="btn btn-sm btn-primary" onclick="loadNews()" style="margin-top:12px;">🔄 뉴스 다시 로딩</button>
+      </div>`;
+
+    showToast('📋 명령어 클립보드 복사됨 → 터미널에 붙여넣기');
+    setTimeout(() => { btn.disabled = false; btn.innerHTML = '🔍 뉴스 수집 시작'; }, 3000);
+  }
+}
+
+// ================================================================
+//  SSE 스트리밍 공통 함수
+// ================================================================
+function runCollectStream(endpoint, body, jobType) {
+  const btn = document.getElementById('btnCollect');
+  const logContainerId = 'collectLogBox';
+
+  // 로그 박스 생성
+  const logHtml = `
+    <div id="${logContainerId}" style="
+      background:#0f172a; color:#e2e8f0; border-radius:10px;
+      padding:20px; font-family:'JetBrains Mono',monospace;
+      font-size:.75rem; line-height:1.8; max-height:420px;
+      overflow-y:auto; margin-bottom:12px; white-space:pre-wrap;
+    ">
+      <span style="color:#94a3b8;">🚀 수집 시작...</span>\n
+    </div>
+    <div style="text-align:center;">
+      <button class="btn btn-sm btn-danger" onclick="stopCollect()" id="btnStop">⏹ 중단</button>
+    </div>`;
+
+  if (jobType === 'news') {
+    document.getElementById('newsList').innerHTML = `
+      <div style="padding:20px 0;">
+        <div style="font-size:.88rem; font-weight:700; color:var(--text-secondary); margin-bottom:12px;">
+          📡 실시간 수집 로그
+        </div>
+        ${logHtml}
+      </div>`;
+  }
+
+  if (btn) { btn.disabled = true; btn.innerHTML = '⏳ 수집 중...'; }
+
+  // SSE 연결 (EventSource는 GET만 지원 → fetch + ReadableStream 사용)
+  let controller;
+  window._collectController = controller = new AbortController();
+
+  fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+    signal: controller.signal
+  }).then(resp => {
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    const logBox = document.getElementById(logContainerId);
+
+    function read() {
+      reader.read().then(({ done, value }) => {
+        if (done) {
+          onCollectComplete(jobType);
+          return;
+        }
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop(); // 미완성 줄은 버퍼에 유지
+
+        lines.forEach(line => {
+          if (line.startsWith('data: ')) {
+            const msg = line.slice(6);
+            if (logBox) {
+              const span = document.createElement('span');
+
+              // 로그 색상 처리
+              if (msg.includes('✅') || msg.includes('완료')) {
+                span.style.color = '#4ade80';
+              } else if (msg.includes('❌') || msg.includes('에러') || msg.includes('ERROR')) {
+                span.style.color = '#f87171';
+              } else if (msg.includes('⚠️')) {
+                span.style.color = '#fbbf24';
+              } else if (msg.startsWith('  ')) {
+                span.style.color = '#94a3b8';
+              } else if (msg.includes('=====') || msg.includes('단계')) {
+                span.style.color = '#60a5fa';
+              } else {
+                span.style.color = '#e2e8f0';
+              }
+
+              span.textContent = msg + '\n';
+              logBox.appendChild(span);
+              logBox.scrollTop = logBox.scrollHeight; // 자동 스크롤
+            }
+          } else if (line.startsWith('event: done')) {
+            onCollectComplete(jobType);
+          } else if (line.startsWith('event: error')) {
+            if (btn) { btn.disabled = false; btn.innerHTML = '🔍 뉴스 수집 시작'; }
+            showToast('❌ 수집 중 오류가 발생했습니다');
+          }
+        });
+
+        read(); // 재귀 읽기
+      }).catch(err => {
+        if (err.name !== 'AbortError') {
+          console.error('SSE read error:', err);
+        }
+      });
+    }
+    read();
+  }).catch(err => {
+    if (err.name !== 'AbortError') {
+      showToast('❌ Flask 서버 연결 실패 — python app.py 실행 여부 확인');
+      if (btn) { btn.disabled = false; btn.innerHTML = '🔍 뉴스 수집 시작'; }
+    }
+  });
+}
+
+function stopCollect() {
+  if (window._collectController) {
+    window._collectController.abort();
+    showToast('⏹ 수집이 중단되었습니다');
+    const btn = document.getElementById('btnCollect');
+    if (btn) { btn.disabled = false; btn.innerHTML = '🔍 뉴스 수집 시작'; }
+  }
+}
+
+function onCollectComplete(jobType) {
+  const btn = document.getElementById('btnCollect');
+  if (btn) { btn.disabled = false; btn.innerHTML = '🔍 뉴스 수집 시작'; }
+
+  if (jobType === 'news') {
+    showToast('✅ 뉴스 수집 완료! 로딩 중...');
+    // 로그 박스 하단에 완료 버튼 추가
+    const logBox = document.getElementById('collectLogBox');
+    if (logBox) {
+      const doneSpan = document.createElement('span');
+      doneSpan.style.color = '#4ade80';
+      doneSpan.style.fontWeight = '700';
+      doneSpan.textContent = '\n✅ 수집 완료! 뉴스를 로딩합니다...\n';
+      logBox.appendChild(doneSpan);
+      logBox.scrollTop = logBox.scrollHeight;
+    }
+    setTimeout(() => loadNews(), 800);
+  } else if (jobType === 'indicators') {
+    showToast('✅ 경제지표 수집 완료!');
+    loadIndicators();
+  }
+}
+
+// ================================================================
+//  뉴스 데이터 로딩
+// ================================================================
+async function loadNews() {
+  try {
+    const resp = await fetch('data/news.json?t=' + Date.now());
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+    processNewsData(data);
+    showToast(`📰 뉴스 ${state.totalNews}건 로딩 완료`);
+  } catch (err) {
+    console.log('news.json 로딩:', err.message);
+  }
+}
+
+// ================================================================
+//  뉴스 렌더링 (체크박스 + AI 재분석 버튼 포함)
+// ================================================================
+function renderNews() {
+  const container = document.getElementById('newsList');
+  if (!state.allItems.length) {
+    container.innerHTML = `
+      <div style="text-align:center; padding:60px 20px; color:var(--text-muted);">
+        <div style="font-size:2.5rem; margin-bottom:12px;">📭</div>
+        <div style="font-size:.9rem; font-weight:600;">수집된 뉴스가 없습니다</div>
+      </div>`;
+    return;
+  }
+
+  let html = '';
+  state.allItems.forEach((item, idx) => {
+    const id = item._id;
+    const isSelected = state.selectedIds.has(id);
+    const relColor = item.ai_relevance === 'HIGH' ? '#dc2626' : '#d97706';
+    const relBadge = item.ai_relevance === 'HIGH' ? '🔴 HIGH' : '🟡 MEDIUM';
+
+    // 날짜
+    let dateDisplay = '';
+    if (item.pub_date) {
+      try {
+        const d = new Date(item.pub_date);
+        dateDisplay = d.toLocaleDateString('ko-KR', {year:'numeric', month:'2-digit', day:'2-digit'})
+                     + ' ' + d.toLocaleTimeString('ko-KR', {hour:'2-digit', minute:'2-digit'});
+      } catch(e) { dateDisplay = item.pub_date; }
+    }
+
+    // 태그
+    const tagsHtml = (item.ai_tags || []).map(t =>
+      `<span style="display:inline-block; background:#eef2ff; color:#4338ca; font-size:.65rem; padding:2px 8px; border-radius:10px; font-weight:500;">${t}</span>`
+    ).join(' ');
+
+    // 소스 배지 색상
+    const srcColor = {
+      '네이버뉴스': '#03c75a', '한국경제': '#0066cc', '매일경제': '#e50012',
+      '서울경제': '#1a73e8', '더벨': '#ff6600', 'Google': '#4285f4',
+      '머니투데이': '#009688', '이데일리': '#0052cc', '뉴시스': '#333',
+    }[item.source] || '#64748b';
+
+    // 카테고리 뱃지
+    const catMeta = CAT_META[item.category] || CAT_META['office_lease'];
+    const catBadge = `<span style="background:rgba(59,130,246,.12);color:var(--accent-blue);font-size:.62rem;font-weight:600;padding:2px 7px;border-radius:4px;">${catMeta.icon} ${catMeta.label}</span>`;
+
+    html += `
+    <div class="news-item ${isSelected ? 'selected' : ''}" data-id="${id}" data-category="${item.category || 'office_lease'}" id="news_${id}">
+      <div class="news-check">
+        <div class="checkbox-custom ${isSelected ? 'checked' : ''}" onclick="toggleItem('${id}')"></div>
+        <div class="news-rank" style="font-size:.75rem; color:var(--accent-blue); font-weight:800;">#${item.rank || idx+1}</div>
+      </div>
+      <div class="news-body">
+        <div class="news-meta">
+          <span class="news-source" style="background:${srcColor}; color:#fff; padding:2px 8px; border-radius:4px; font-size:.65rem; font-weight:600;">${item.source}</span>
+          <span class="news-date">${dateDisplay}</span>
+          <span style="font-size:.7rem; color:${relColor}; font-weight:600;">${relBadge}</span>
+          ${catBadge}
+        </div>
+        <div class="news-title" style="cursor:pointer; word-break:keep-all;" onclick="window.open('${item.link}','_blank')">${(item.title||'').replace(/\s*[\.…⋯]{2,}\s*$/, '').trim()}</div>
+        <div class="news-ai-tag" id="aiTag_${id}">🤖 AI 큐레이션 · 관련도 ${item.ai_relevance || 'N/A'}</div>
+        ${(()=>{
+          const s = (item.ai_short_summary||'').trim().replace(/\s*[\.…⋯]{2,}\s*$/, '').trim();
+          const t = (item.title||'').trim();
+          const sumText = (item.ai_summary||'').trim().replace(/\s*[\.…⋯]{2,}\s*$/, '').trim();
+          // 제목과 동일하거나 summary와 동일/중복이면 숨김
+          const dupTitle = !s || s===t || t.startsWith(s.slice(0,15)) || s.startsWith(t.slice(0,15));
+          const dupSum   = sumText && (s===sumText || sumText.startsWith(s.slice(0,20)));
+          return (dupTitle||dupSum) ? '' : `<div class="news-short-summary" id="aiShortSummary_${id}" style="font-size:.78rem; font-weight:700; color:#1e40af; margin:4px 0 2px;">${s}</div>`;
+        })()}
+        <div class="news-summary" id="aiSummary_${id}" style="font-size:.78rem; color:#475569; line-height:1.6;">${(item.ai_summary||item.description||'').replace(/\s*[\.…⋯]{2,}\s*$/, '').trim()}</div>
+        ${item.ai_comment ? `<div id="aiComment_${id}" style="margin-top:8px; padding:8px 12px; background:linear-gradient(135deg,#fef3c7,#fef9c3); border-radius:8px; font-size:.78rem; color:#92400e;">💬 <strong>한줄평:</strong> ${item.ai_comment}</div>` : `<div id="aiComment_${id}"></div>`}
+        ${item.ai_reason ? `<div class="news-reason" id="aiReason_${id}">💡 <strong>선정 이유:</strong> ${item.ai_reason}</div>` : `<div id="aiReason_${id}"></div>`}
+        ${tagsHtml ? `<div style="margin-top:8px; display:flex; gap:4px; flex-wrap:wrap;" id="aiTags_${id}">${tagsHtml}</div>` : `<div id="aiTags_${id}"></div>`}
+
+        <!-- 개별 복사 버튼 바 -->
+        <div class="copy-bar" id="copyBar_${id}">
+          <span style="font-size:.62rem; color:var(--text-muted); font-weight:600; letter-spacing:.04em;">📋 복사</span>
+          <button class="copy-btn" onclick="copyCardField('${id}','title')"   title="제목 복사">제목</button>
+          <button class="copy-btn" onclick="copyCardField('${id}','summary')" title="요약 복사">요약</button>
+          <button class="copy-btn" onclick="copyCardField('${id}','comment')" title="한줄평 복사">한줄평</button>
+          <button class="copy-btn" onclick="copyCardField('${id}','link')"    title="링크 복사">링크</button>
+          <button class="copy-btn" onclick="copyCardHtml('${id}')"            title="이 카드 HTML 복사" style="border-color:rgba(124,58,237,.4);color:#7c3aed;">HTML</button>
+          <button class="copy-btn copy-btn-all" onclick="copyNewsItem('${id}')" title="텍스트 전체 복사">전체</button>
+        </div>
+      </div>
+      <div class="news-actions" style="display:flex; flex-direction:column; gap:6px;">
+        <button class="news-action-btn" onclick="window.open('${item.link}','_blank')" title="원문 보기">🔗</button>
+        <button class="news-action-btn" onclick="aiReanalyzeSingle('${id}')" title="AI 재분석" id="btnAi_${id}">🤖</button>
+        <button class="news-action-btn" onclick="toggleEditMode('${id}')" title="요약/한줄평 편집" id="btnEdit_${id}">✏️</button>
+      </div>
+    </div>
+    <!-- 인라인 편집 영역 -->
+    <div id="editArea_${id}" style="display:none; padding:12px 16px 16px; border-top:1px dashed #e2e8f0; background:#fafbfc;">
+      <div style="margin-bottom:10px;">
+        <div style="font-size:.7rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:4px;">✏️ 요약 편집</div>
+        <textarea id="editSummary_${id}" style="width:100%; background:#fff; border:1px solid #cbd5e1; border-radius:6px; padding:8px 10px; font-family:inherit; font-size:.82rem; line-height:1.6; resize:vertical; min-height:70px; color:#1e293b;">${item.ai_summary || item.description || ''}</textarea>
+      </div>
+      <div style="margin-bottom:10px;">
+        <div style="font-size:.7rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:4px;">💬 한줄평 편집</div>
+        <textarea id="editComment_${id}" style="width:100%; background:#fff; border:1px solid #cbd5e1; border-radius:6px; padding:8px 10px; font-family:inherit; font-size:.82rem; line-height:1.6; resize:vertical; min-height:42px; color:#1e293b;">${item.ai_comment || ''}</textarea>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:6px;">
+        <button class="btn btn-sm btn-outline" onclick="cancelEdit('${id}')">취소</button>
+        <button class="btn btn-sm btn-primary" onclick="applyEdit('${id}')">✅ 적용</button>
+      </div>
+    </div>`;
+  });
+
+  container.innerHTML = html;
+}
+
+// ================================================================
+//  체크박스 로직
+// ================================================================
+function toggleItem(id) {
+  if (state.selectedIds.has(id)) {
+    state.selectedIds.delete(id);
+  } else {
+    state.selectedIds.add(id);
+  }
+  // UI 업데이트
+  const el = document.getElementById(`news_${id}`);
+  const cb = el?.querySelector('.checkbox-custom');
+  if (el) el.classList.toggle('selected', state.selectedIds.has(id));
+  if (cb) cb.classList.toggle('checked', state.selectedIds.has(id));
+  updateBottomBar();
+}
+
+function toggleSelectAll() {
+  const cb = document.getElementById('selectAllCheckbox');
+  const allSelected = state.selectedIds.size === state.totalNews;
+
+  if (allSelected) {
+    // 전체 해제
+    state.selectedIds.clear();
+    cb.classList.remove('checked');
+  } else {
+    // 전체 선택
+    state.allItems.forEach(item => state.selectedIds.add(item._id));
+    cb.classList.add('checked');
+  }
+
+  // 모든 뉴스 아이템 UI 업데이트
+  state.allItems.forEach(item => {
+    const el = document.getElementById(`news_${item._id}`);
+    const itemCb = el?.querySelector('.checkbox-custom');
+    const isSelected = state.selectedIds.has(item._id);
+    if (el) el.classList.toggle('selected', isSelected);
+    if (itemCb) itemCb.classList.toggle('checked', isSelected);
+  });
+
+  updateBottomBar();
+}
+
+function updateBottomBar() {
+  const count = state.selectedIds.size;
+  const total = state.totalNews;
+  const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+
+  const pi = document.getElementById('progressInfo');
+  if (pi) pi.innerHTML = `선택: <strong>${count}</strong> / <span id="totalNewsCount">${total}</span>건`;
+  const pf = document.getElementById('progressFill');
+  if (pf) pf.style.width = pct + '%';
+
+  const reanalyze = document.getElementById('reanalyzeCount');
+  if (reanalyze) reanalyze.textContent = count;
+
+  const selectAllCb = document.getElementById('selectAllCheckbox');
+  if (selectAllCb) selectAllCb.classList.toggle('checked', count === total && total > 0);
+
+  const btnAi  = document.getElementById('btnAiReanalyze');
+  const btnFin = document.getElementById('btnFinalize');
+  const btnCp  = document.getElementById('btnCopyHtml');
+  if (btnAi)  btnAi.disabled  = count === 0;
+  if (btnFin) btnFin.disabled = count === 0;
+  if (btnCp)  btnCp.disabled  = count === 0;
+  const btnExcel = document.getElementById('btnExcelExport');
+  if (btnExcel) btnExcel.disabled = count === 0;
+}
+
+// ================================================================
+//  인라인 편집 (요약 / 한줄평)
+// ================================================================
+function toggleEditMode(id) {
+  const area = document.getElementById(`editArea_${id}`);
+  const btn  = document.getElementById(`btnEdit_${id}`);
+  const item = state.allItems.find(i => i._id === id);
+  if (!area) return;
+
+  const isOpen = area.style.display !== 'none';
+  if (isOpen) {
+    area.style.display = 'none';
+    btn.style.background = '';
+    btn.style.borderColor = '';
+    btn.style.color = '';
+  } else {
+    // 현재 state 값으로 textarea 채우기
+    const sumEl = document.getElementById(`editSummary_${id}`);
+    const comEl = document.getElementById(`editComment_${id}`);
+    if (sumEl && item) sumEl.value = item.ai_summary || item.description || '';
+    if (comEl && item) comEl.value = item.ai_comment || '';
+    area.style.display = 'block';
+    btn.style.background = 'rgba(59,130,246,.1)';
+    btn.style.borderColor = 'var(--accent-blue)';
+    btn.style.color = 'var(--accent-blue)';
+  }
+}
+
+function applyEdit(id) {
+  const item = state.allItems.find(i => i._id === id);
+  if (!item) return;
+
+  const newSummary = document.getElementById(`editSummary_${id}`)?.value || '';
+  const newComment = document.getElementById(`editComment_${id}`)?.value || '';
+
+  // state 업데이트
+  item.ai_summary = newSummary;
+  item.ai_comment = newComment;
+
+  // DOM 실시간 반영
+  const summaryEl = document.getElementById(`aiSummary_${id}`);
+  const commentEl = document.getElementById(`aiComment_${id}`);
+  if (summaryEl) summaryEl.textContent = newSummary;
+  if (commentEl) {
+    commentEl.innerHTML = newComment
+      ? `💬 <strong>한줄평:</strong> ${newComment}`
+      : '';
+    commentEl.style.cssText = newComment
+      ? 'margin-top:8px; padding:8px 12px; background:linear-gradient(135deg,#fef3c7,#fef9c3); border-radius:8px; font-size:.78rem; color:#92400e;'
+      : '';
+  }
+
+  // 편집창 닫기
+  const area = document.getElementById(`editArea_${id}`);
+  const btn  = document.getElementById(`btnEdit_${id}`);
+  if (area) area.style.display = 'none';
+  if (btn) { btn.style.background = ''; btn.style.borderColor = ''; btn.style.color = ''; }
+
+  showToast('✅ 편집 내용이 적용되었습니다');
+}
+
+function cancelEdit(id) {
+  const area = document.getElementById(`editArea_${id}`);
+  const btn  = document.getElementById(`btnEdit_${id}`);
+  if (area) area.style.display = 'none';
+  if (btn) { btn.style.background = ''; btn.style.borderColor = ''; btn.style.color = ''; }
+}
+
+// ================================================================
+//  복사 기능
+// ================================================================
+
+// 개별 필드 복사 (카드 내 버튼용) — 복사 완료 시 버튼 색상 피드백
+function copyCardField(id, field) {
+  const item = state.allItems.find(i => i._id === id);
+  if (!item) return;
+
+  const texts = {
+    title:   item.title || '',
+    summary: item.ai_summary || item.description || '',
+    comment: item.ai_comment || '',
+    link:    item.link || '',
+  };
+  const labels = { title:'제목', summary:'요약', comment:'한줄평', link:'링크' };
+
+  const text = texts[field];
+  if (!text.trim()) { showToast(`⚠️ ${labels[field]} 내용이 없습니다`); return; }
+
+  copyToClipboard(text, `📋 ${labels[field]} 복사 완료`);
+
+  // 버튼 시각 피드백
+  const bar = document.getElementById(`copyBar_${id}`);
+  if (!bar) return;
+  const btns = bar.querySelectorAll('.copy-btn');
+  const fieldIndex = ['title','summary','comment','link'].indexOf(field);
+  const btn = btns[fieldIndex + 1]; // 첫 번째는 라벨 span
+  if (btn) {
+    btn.classList.add('copied');
+    btn.textContent = '✓';
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      btn.textContent = labels[field];
+    }, 900);
+  }
+}
+
+function copyNewsItem(id) {
+  const item = state.allItems.find(i => i._id === id);
+  if (!item) return;
+
+  const text = [
+    item.title                            ? `[제목] ${item.title}`   : '',
+    (item.ai_summary || item.description) ? `[요약] ${item.ai_summary || item.description}` : '',
+    item.ai_comment                       ? `[한줄평] ${item.ai_comment}` : '',
+    item.link                             ? `[링크] ${item.link}`   : '',
+  ].filter(Boolean).join('\n');
+
+  copyToClipboard(text, '📋 전체 복사 완료 (제목 + 요약 + 한줄평 + 링크)');
+
+  // 전체 버튼 피드백
+  const bar = document.getElementById(`copyBar_${id}`);
+  const btn = bar?.querySelector('.copy-btn-all');
+  if (btn) {
+    btn.classList.add('copied');
+    btn.textContent = '✓ 복사됨';
+    setTimeout(() => { btn.classList.remove('copied'); btn.textContent = '전체'; }, 900);
+  }
+}
+
+// ================================================================
+//  JSON 파일 직접 불러오기
+// ================================================================
+function loadNewsFromFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      processNewsData(data);
+      showToast(`✅ ${file.name} 불러오기 완료`);
+      // input 초기화 (같은 파일 재선택 허용)
+      input.value = '';
+    } catch(err) {
+      showToast('❌ JSON 파싱 오류 — 올바른 news.json 파일인지 확인하세요');
+      console.error(err);
+    }
+  };
+  reader.readAsText(file, 'utf-8');
+}
+
+// news.json 데이터 처리 공통 함수 (fetch / file 양쪽에서 사용)
+function processNewsData(data) {
+  state.newsData = data;
+  state.allItems = [];
+
+  if (data.categories) {
+    data.categories.forEach(cat => {
+      cat.items.forEach(item => {
+        item._id = item.hash_id || `item_${state.allItems.length}`;
+        state.allItems.push(item);
+      });
+    });
+  }
+  state.totalNews = state.allItems.length;
+
+  // 발행일 내림차순 — ISO 문자열 앞 19자 직접 비교 (timezone 파싱 오류 없음)
+  const safeTs = d => (d && typeof d === 'string' && d.length >= 10) ? d.slice(0,19) : '';
+  state.allItems.sort((a, b) => {
+    const ta = safeTs(a.pub_date), tb = safeTs(b.pub_date);
+    if (!ta && !tb) return (a.rank||999) - (b.rank||999);
+    if (!ta) return 1;
+    if (!tb) return -1;
+    return tb > ta ? 1 : tb < ta ? -1 : (a.rank||999) - (b.rank||999);
+  });
+
+  state.selectedIds.clear();
+  state.allItems.forEach(item => state.selectedIds.add(item._id));
+
+  // 탭·사이드바 카운트
+  const catCounts = {};
+  state.allItems.forEach(item => {
+    const c = item.category || 'office_lease';
+    catCounts[c] = (catCounts[c] || 0) + 1;
+  });
+  const tabAll = document.getElementById('tabCountAll');
+  if (tabAll) tabAll.textContent = state.totalNews;
+  const sbAll = document.getElementById('sidebarBadgeAll');
+  if (sbAll) sbAll.textContent = state.totalNews;
+  Object.keys(CAT_META).forEach(catId => {
+    if (catId === 'all') return;
+    const cnt = catCounts[catId] || 0;
+    const tabEl = document.getElementById(`tabCount_${catId}`);
+    const sbEl  = document.getElementById(`sidebarBadge_${catId}`);
+    if (tabEl) tabEl.textContent = cnt;
+    if (sbEl)  sbEl.textContent  = cnt;
+  });
+
+  // 날짜 범위는 사용자가 직접 설정한 값을 유지 (덮어쓰지 않음)
+  // 대신 수집된 데이터의 날짜 범위를 selectedCount 텍스트에 표시
+  const dateRangeText = (data.date_from && data.date_to)
+    ? ` · ${data.date_from} ~ ${data.date_to}`
+    : '';
+  document.getElementById('selectedCount').textContent =
+    `${state.totalNews}건 수집됨 · ${data.generated_at || ''}${dateRangeText}`;
+
+  renderNews();
+  updateBottomBar();
+}
+
+// ================================================================
+//  단일 카드 HTML 복사
+// ================================================================
+function copyCardHtml(id) {
+  const item = state.allItems.find(i => i._id === id);
+  if (!item) return;
+
+  const html = buildSingleCardHtml(item);
+  copyToClipboard(html, '📋 카드 HTML 복사 완료 — 에디터에 바로 붙여넣기 가능');
+
+  // 버튼 피드백
+  const bar = document.getElementById(`copyBar_${id}`);
+  if (bar) {
+    const btn = Array.from(bar.querySelectorAll('.copy-btn'))
+                     .find(b => b.textContent.trim() === 'HTML');
+    if (btn) {
+      const orig = btn.textContent;
+      btn.textContent = '✓';
+      btn.style.background = '#ede9fe';
+      btn.style.borderColor = '#7c3aed';
+      setTimeout(() => {
+        btn.textContent = orig;
+        btn.style.background = '';
+        btn.style.borderColor = 'rgba(124,58,237,.4)';
+      }, 900);
+    }
+  }
+}
+
+function buildSingleCardHtml(item) {
+  const relColor = item.ai_relevance === 'HIGH' ? '#dc2626' : '#d97706';
+  const relLabel = item.ai_relevance === 'HIGH' ? '🔴 HIGH' : '🟡 MEDIUM';
+  const pubDate  = item.pub_date ? new Date(item.pub_date).toLocaleDateString('ko-KR') : '';
+  const tags     = (item.ai_tags || []).map(t =>
+    `<span style="display:inline-block;background:#eef2ff;color:#4338ca;font-size:11px;padding:2px 8px;border-radius:10px;margin:2px;">${t}</span>`
+  ).join('');
+
+  return `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:20px;margin-bottom:16px;${item.ai_relevance==='HIGH'?'border-left:4px solid #dc2626;':''}">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+    <div>
+      <span style="background:#64748b;color:#fff;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;">${item.source}</span>
+      <span style="font-size:12px;color:#94a3b8;margin-left:8px;">${pubDate}</span>
+    </div>
+    <span style="font-size:12px;color:${relColor};font-weight:700;">${relLabel}</span>
+  </div>
+  <h3 style="font-size:15px;font-weight:700;color:#1e293b;margin:8px 0;line-height:1.5;">
+    <a href="${item.link}" target="_blank" style="color:#1e293b;text-decoration:none;">${item.title}</a>
+  </h3>
+  <p style="font-size:13px;color:#475569;line-height:1.7;margin:8px 0;">${item.ai_summary || item.description || ''}</p>
+  ${item.ai_comment ? `<div style="background:linear-gradient(135deg,#fef3c7,#fef9c3);border-radius:8px;padding:10px 14px;margin:10px 0;font-size:12px;color:#92400e;">💬 <strong>한줄평:</strong> ${item.ai_comment}</div>` : ''}
+  ${item.ai_reason  ? `<div style="font-size:12px;color:#64748b;margin-top:8px;">💡 <strong>선정 이유:</strong> ${item.ai_reason}</div>` : ''}
+  ${tags ? `<div style="margin-top:10px;">${tags}</div>` : ''}
+</div>`;
+}
+// ================================================================
+function copyToClipboard(text, successMsg) {
+  if (navigator.clipboard && window.isSecureContext) {
+    // HTTPS / localhost 권장 경로
+    navigator.clipboard.writeText(text)
+      .then(() => showToast(successMsg || '📋 복사 완료'))
+      .catch(() => execCommandFallback(text, successMsg));
+  } else {
+    // HTTP fallback
+    execCommandFallback(text, successMsg);
+  }
+}
+
+function execCommandFallback(text, successMsg) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  try {
+    const ok = document.execCommand('copy');
+    showToast(ok ? (successMsg || '📋 복사 완료') : '❌ 복사 실패 — 텍스트를 직접 선택해 복사해주세요');
+  } catch {
+    showToast('❌ 복사 실패');
+  }
+  document.body.removeChild(ta);
+}
+
+function copyBodyHtml(btnId) {
+  const selectedItems = state.allItems.filter(i => state.selectedIds.has(i._id));
+  if (!selectedItems.length) { showToast('⚠️ 선택된 뉴스가 없습니다'); return; }
+
+  const bodyContent = buildNewsBodyHtml(selectedItems);
+  copyToClipboard(bodyContent, '📋 HTML 본문 복사 완료 — 에디터에 바로 붙여넣기 가능');
+
+  // 버튼 피드백 (bottom bar 버튼 + 모달 버튼 모두 처리)
+  ['btnCopyHtml', btnId].filter(Boolean).forEach(id => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    const orig = btn.innerHTML;
+    btn.innerHTML = '✓ 복사됨';
+    btn.style.cssText += 'background:#dcfce7!important;border-color:#16a34a!important;color:#15803d!important;';
+    setTimeout(() => {
+      btn.innerHTML = orig;
+      btn.style.cssText = btn.style.cssText
+        .replace(/background[^;]+;?/g,'')
+        .replace(/border-color[^;]+;?/g,'')
+        .replace(/color[^;]+;?/g,'');
+    }, 1400);
+  });
+}
+
+// ================================================================
+//  generateFinalHTML — 모달 방식으로 개편
+// ================================================================
+
+// 뉴스 body HTML 생성 (공통)
+function buildNewsBodyHtml(selectedItems) {
+  const now    = new Date();
+  const dateStr = now.toLocaleDateString('ko-KR', { year:'numeric', month:'long', day:'numeric', weekday:'long' });
+
+  const grouped  = {};
+  selectedItems.forEach(item => {
+    const cat = item.category || 'office_lease';
+    if (!grouped[cat]) grouped[cat] = [];
+    grouped[cat].push(item);
+  });
+
+  const catOrder = ['real_estate_market','office_lease','asset_transaction','corporate_space','industrial_asset','smart_esg'];
+  let html = '';
+
+  catOrder.forEach(catId => {
+    const items = grouped[catId];
+    if (!items?.length) return;
+    const meta = CAT_META[catId] || { icon:'📋', label: catId };
+
+    html += `<div style="font-size:14px;font-weight:700;color:#475569;margin:24px 0 12px;padding-bottom:8px;border-bottom:1px solid #e2e8f0;">${meta.icon} ${meta.label} · ${items.length}건 선별</div>\n`;
+
+    items.forEach(item => {
+      const relColor = item.ai_relevance === 'HIGH' ? '#dc2626' : '#d97706';
+      const relLabel = item.ai_relevance === 'HIGH' ? '🔴 HIGH' : '🟡 MEDIUM';
+      const tags = (item.ai_tags || []).map(t =>
+        `<span style="display:inline-block;background:#eef2ff;color:#4338ca;font-size:11px;padding:2px 8px;border-radius:10px;margin:2px;">${t}</span>`
+      ).join('');
+      const pubDate = item.pub_date ? new Date(item.pub_date).toLocaleDateString('ko-KR') : '';
+
+      html += `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:20px;margin-bottom:16px;${item.ai_relevance==='HIGH'?'border-left:4px solid #dc2626;':''}">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+    <div>
+      <span style="background:#64748b;color:#fff;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;">${item.source}</span>
+      <span style="font-size:12px;color:#94a3b8;margin-left:8px;">${pubDate}</span>
+    </div>
+    <span style="font-size:12px;color:${relColor};font-weight:700;">${relLabel}</span>
+  </div>
+  <h3 style="font-size:15px;font-weight:700;color:#1e293b;margin:8px 0;line-height:1.5;">
+    <a href="${item.link}" target="_blank" style="color:#1e293b;text-decoration:none;">${item.title}</a>
+  </h3>
+  <p style="font-size:13px;color:#475569;line-height:1.7;margin:8px 0;">${item.ai_summary || item.description || ''}</p>
+  ${item.ai_comment ? `<div style="background:linear-gradient(135deg,#fef3c7,#fef9c3);border-radius:8px;padding:10px 14px;margin:10px 0;font-size:12px;color:#92400e;">💬 <strong>한줄평:</strong> ${item.ai_comment}</div>` : ''}
+  ${item.ai_reason  ? `<div style="font-size:12px;color:#64748b;margin-top:8px;">💡 <strong>선정 이유:</strong> ${item.ai_reason}</div>` : ''}
+  ${tags ? `<div style="margin-top:10px;">${tags}</div>` : ''}
+</div>\n`;
+    });
+  });
+
+  return html;
+}
+
+// state에 finalHtml 저장
+state.finalHtml = '';
+state.finalBodyHtml = '';
+
+function generateFinalHTML() {
+  const selectedItems = state.allItems.filter(i => state.selectedIds.has(i._id));
+  if (!selectedItems.length) { showToast('⚠️ 선택된 뉴스가 없습니다'); return; }
+
+  const now     = new Date();
+  const dateStr = now.toLocaleDateString('ko-KR', { year:'numeric', month:'long', day:'numeric', weekday:'long' });
+  const bodyHtml = buildNewsBodyHtml(selectedItems);
+
+  // 전체 HTML
+  state.finalBodyHtml = bodyHtml;
+  state.finalHtml = `<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRE Daily Brief — ${dateStr}</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:-apple-system,'Pretendard',sans-serif; background:#f8fafc; color:#1e293b; }
+    .container { max-width:680px; margin:0 auto; padding:20px; }
+    .header { text-align:center; padding:32px 0; border-bottom:2px solid #e2e8f0; margin-bottom:24px; }
+    .header h1 { font-size:24px; font-weight:800; color:#0f172a; }
+    .header p { font-size:13px; color:#94a3b8; margin-top:8px; }
+    .footer { text-align:center; padding:32px 0; margin-top:24px; border-top:1px solid #e2e8f0; font-size:11px; color:#94a3b8; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🏢 CRE DAILY BRIEF</h1>
+      <p>${dateStr} · 상업용 부동산 뉴스 큐레이션</p>
+    </div>
+    ${bodyHtml}
+    <div class="footer">
+      CRE Daily Brief · S&amp;I Corporation · ${now.toLocaleDateString('ko-KR')}<br>
+      Powered by AI Curation (${selectedItems.length}건 선별)
+    </div>
+  </div>
+</body>
+</html>`;
+
+  // 마감 확정 모달에 미리보기 + 복사 버튼 구성
+  const modal = document.getElementById('finalizeModalBody');
+  let modalHtml = `
+    <div style="margin-bottom:16px; padding:12px 16px; background:#f0fdf4; border-radius:8px; border:1px solid #bbf7d0;">
+      <div style="font-size:.85rem; font-weight:700; color:#166534;">✅ ${selectedItems.length}건 마감 확정 완료 · ${dateStr}</div>
+      <div style="font-size:.75rem; color:#16a34a; margin-top:4px;">아래에서 개별 복사 또는 전체 HTML 다운로드 가능</div>
+    </div>`;
+
+  // 카테고리별 아이템 목록 + 개별 복사 버튼
+  const catOrder = ['real_estate_market','office_lease','asset_transaction','corporate_space','industrial_asset','smart_esg'];
+  const grouped  = {};
+  selectedItems.forEach(item => {
+    const cat = item.category || 'office_lease';
+    if (!grouped[cat]) grouped[cat] = [];
+    grouped[cat].push(item);
+  });
+
+  catOrder.forEach(catId => {
+    const items = grouped[catId];
+    if (!items?.length) return;
+    const meta = CAT_META[catId] || { icon:'📋', label: catId };
+
+    modalHtml += `<div style="font-size:.72rem; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:.06em; margin:16px 0 8px; padding-bottom:6px; border-bottom:1px solid #e2e8f0;">${meta.icon} ${meta.label} · ${items.length}건</div>`;
+
+    items.forEach((item, idx) => {
+      const safeId = item._id.replace(/[^a-zA-Z0-9_]/g, '_');
+      modalHtml += `
+      <div style="border:1px solid #e2e8f0; border-radius:8px; padding:12px 14px; margin-bottom:8px; background:#fff;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+          <div style="font-size:.85rem; font-weight:700; color:#1e293b; flex:1; line-height:1.5;">${item.title}</div>
+          <div style="display:flex; gap:4px; flex-shrink:0;">
+            <button onclick="copyField('title','${safeId}')" style="font-size:.65rem; padding:3px 7px; background:#f1f5f9; border:1px solid #e2e8f0; border-radius:4px; cursor:pointer; color:#64748b;" title="제목 복사">제목</button>
+            <button onclick="copyField('summary','${safeId}')" style="font-size:.65rem; padding:3px 7px; background:#f1f5f9; border:1px solid #e2e8f0; border-radius:4px; cursor:pointer; color:#64748b;" title="요약 복사">요약</button>
+            <button onclick="copyField('comment','${safeId}')" style="font-size:.65rem; padding:3px 7px; background:#f1f5f9; border:1px solid #e2e8f0; border-radius:4px; cursor:pointer; color:#64748b;" title="한줄평 복사">한줄평</button>
+            <button onclick="copyField('all','${safeId}')" style="font-size:.65rem; padding:3px 7px; background:#3b82f6; border:1px solid #3b82f6; border-radius:4px; cursor:pointer; color:#fff;" title="전체 복사">전체</button>
+          </div>
+        </div>
+        ${item.ai_summary ? `<div style="font-size:.78rem; color:#475569; margin-top:6px; line-height:1.6;" id="fin_summary_${safeId}">${item.ai_summary}</div>` : ''}
+        ${item.ai_comment ? `<div style="font-size:.75rem; color:#92400e; margin-top:4px; background:#fef9c3; padding:4px 8px; border-radius:4px;" id="fin_comment_${safeId}">💬 ${item.ai_comment}</div>` : ''}
+        <!-- 숨겨진 데이터 -->
+        <span style="display:none;" id="fin_title_${safeId}">${item.title}</span>
+        <span style="display:none;" id="fin_link_${safeId}">${item.link}</span>
+      </div>`;
+    });
+  });
+
+  modal.innerHTML = modalHtml;
+
+  // ✅ 히스토리 자동 저장
+  recordFinalize(selectedItems);
+
+  document.getElementById('finalizeModal').classList.add('active');
+}
+
+function hideFinalizeModal() {
+  document.getElementById('finalizeModal').classList.remove('active');
+}
+
+function downloadFinalHTML() {
+  if (!state.finalHtml) { showToast('⚠️ 먼저 마감 확정을 실행해주세요'); return; }
+  const now      = new Date();
+  const fileName = `CRE_Daily_Brief_${now.toISOString().split('T')[0].replace(/-/g,'')}.html`;
+  const blob = new Blob([state.finalHtml], { type: 'text/html; charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = fileName; a.click();
+  URL.revokeObjectURL(url);
+  showToast(`✅ ${fileName} 다운로드 완료`);
+}
+
+// 개별 필드 복사
+function copyField(type, safeId) {
+  let text = '';
+  if (type === 'title') {
+    text = document.getElementById(`fin_title_${safeId}`)?.textContent || '';
+  } else if (type === 'summary') {
+    text = document.getElementById(`fin_summary_${safeId}`)?.textContent || '';
+  } else if (type === 'comment') {
+    const raw = document.getElementById(`fin_comment_${safeId}`)?.textContent || '';
+    text = raw.replace(/^💬\s*/, '');
+  } else if (type === 'all') {
+    const title   = document.getElementById(`fin_title_${safeId}`)?.textContent   || '';
+    const summary = document.getElementById(`fin_summary_${safeId}`)?.textContent || '';
+    const comment = (document.getElementById(`fin_comment_${safeId}`)?.textContent || '').replace(/^💬\s*/,'');
+    const link    = document.getElementById(`fin_link_${safeId}`)?.textContent    || '';
+    text = [
+      title   ? `[제목] ${title}`   : '',
+      summary ? `[요약] ${summary}` : '',
+      comment ? `[한줄평] ${comment}` : '',
+      link    ? `[링크] ${link}`    : '',
+    ].filter(Boolean).join('\n');
+  }
+  if (!text.trim()) { showToast('⚠️ 내용이 없습니다'); return; }
+  const labels = { title:'제목', summary:'요약', comment:'한줄평', all:'전체' };
+  copyToClipboard(text, `📋 ${labels[type] || ''} 복사 완료`);
+}
+
+// ================================================================
+//  Claude API 연결 테스트
+// ================================================================
+async function testClaudeAPI() {
+  const key   = document.getElementById('cfgClaudeKey').value.trim();
+  const model = document.getElementById('cfgClaudeModel').value;
+  if (!key) { showToast('⚠️ Claude API 키를 먼저 입력해주세요'); return; }
+
+  const btn    = document.getElementById('btnTestClaude');
+  const status = document.getElementById('claudeTestStatus');
+  btn.disabled = true;
+  btn.textContent = '⏳ 확인 중...';
+  status.textContent = '확인 중...';
+  status.style.color = '#94a3b8';
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: model,
+        max_tokens: 10,
+        messages: [{ role: 'user', content: 'ping' }],
+      }),
+    });
+
+    if (resp.ok) {
+      status.textContent = '✅ 연결 성공';
+      status.style.color = '#059669';
+      showToast('✅ Claude API 연결 확인됨');
+      updateClaudeSidebarBadge(true);
+    } else {
+      const err = await resp.json().catch(() => ({}));
+      const msg = err?.error?.message || `HTTP ${resp.status}`;
+      status.textContent = `❌ ${msg.substring(0, 40)}`;
+      status.style.color = '#dc2626';
+      showToast(`❌ Claude API 오류: ${msg.substring(0, 60)}`);
+      updateClaudeSidebarBadge(false);
+    }
+  } catch(e) {
+    status.textContent = '❌ 연결 실패';
+    status.style.color = '#dc2626';
+    showToast('❌ Claude API 연결 실패 (네트워크 오류)');
+    updateClaudeSidebarBadge(false);
+  }
+
+  btn.disabled = false;
+  btn.textContent = '🔌 연결 테스트';
+}
+
+function updateClaudeSidebarBadge(ok) {
+  const badge = document.getElementById('srcClaudeBadge');
+  if (!badge) return;
+  badge.textContent = ok ? 'OK' : 'ERR';
+  badge.style.background = ok ? 'var(--accent-green)' : 'var(--accent-red)';
+}
+
+function toggleClaudeKeyVisibility() {
+  const inp = document.getElementById('cfgClaudeKey');
+  const btn = document.getElementById('btnToggleKey');
+  if (inp.type === 'password') { inp.type = 'text';     btn.textContent = '🙈'; }
+  else                         { inp.type = 'password'; btn.textContent = '👁'; }
+}
+
+// ================================================================
+//  소스 관리 (웹사이트 / RSS)
+// ================================================================
+let sourceTab = 'sites';
+
+function showSourceModal(tab) {
+  tab = tab || 'sites';
+  document.getElementById('sourceModal').classList.add('active');
+  switchSourceTab(tab);
+  renderSourceList();
+}
+
+function hideSourceModal() {
+  document.getElementById('sourceModal').classList.remove('active');
+}
+
+function switchSourceTab(tab) {
+  sourceTab = tab;
+  const isSites = tab === 'sites';
+  document.getElementById('srcPanelSites').style.display = isSites ? '' : 'none';
+  document.getElementById('srcPanelRss').style.display   = isSites ? 'none' : '';
+
+  const tSites = document.getElementById('srcTabSites');
+  const tRss   = document.getElementById('srcTabRss');
+  tSites.style.background = isSites ? 'var(--accent-blue)' : 'none';
+  tSites.style.color      = isSites ? '#fff' : 'var(--text-muted)';
+  tRss.style.background   = !isSites ? 'var(--accent-blue)' : 'none';
+  tRss.style.color        = !isSites ? '#fff' : 'var(--text-muted)';
+}
+
+function getSources(type) {
+  try { return JSON.parse(localStorage.getItem(`cre_sources_${type}`) || '[]'); }
+  catch { return []; }
+}
+function saveSources(type, arr) {
+  localStorage.setItem(`cre_sources_${type}`, JSON.stringify(arr));
+  updateSourceBadges();
+}
+
+function updateSourceBadges() {
+  const sites = getSources('sites');
+  const rss   = getSources('rss');
+  const sEl = document.getElementById('srcSitesBadge');
+  const rEl = document.getElementById('srcRssBadge');
+  if (sEl) { sEl.textContent = sites.length; sEl.style.background = sites.length ? 'var(--accent-blue)' : '#64748b'; }
+  if (rEl) { rEl.textContent = rss.length;   rEl.style.background = rss.length   ? 'var(--accent-blue)' : '#64748b'; }
+}
+
+function renderSourceList() {
+  renderList('sites');
+  renderList('rss');
+}
+
+function renderList(type) {
+  const arr = getSources(type);
+  const el  = document.getElementById(type === 'sites' ? 'sitesList' : 'rssList');
+  if (!el) return;
+
+  if (!arr.length) {
+    el.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted); font-size:.8rem;">등록된 ${type === 'sites' ? '웹사이트' : 'RSS 피드'}가 없습니다</div>`;
+    return;
+  }
+
+  el.innerHTML = arr.map((item, idx) => `
+    <div style="display:flex; align-items:center; gap:8px; padding:8px 12px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px;">
+      <div style="flex:1; min-width:0;">
+        <div style="font-size:.82rem; font-weight:600; color:#1e293b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item.name || '(이름없음)'}</div>
+        <div style="font-size:.72rem; color:#64748b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item.url}</div>
+      </div>
+      <span style="font-size:.65rem; padding:2px 6px; border-radius:4px; background:#fef3c7; color:#92400e; flex-shrink:0;">미연동</span>
+      <button onclick="removeSource('${type}', ${idx})" style="background:none; border:none; color:#94a3b8; cursor:pointer; font-size:1rem; flex-shrink:0; padding:0 4px;">✕</button>
+    </div>`).join('');
+}
+
+function addSource(type) {
+  const urlEl  = document.getElementById(type === 'site' ? 'newSiteUrl'  : 'newRssUrl');
+  const nameEl = document.getElementById(type === 'site' ? 'newSiteName' : 'newRssName');
+  const url    = urlEl?.value.trim();
+  const name   = nameEl?.value.trim() || url;
+  const key    = type === 'site' ? 'sites' : 'rss';
+
+  if (!url) { showToast('⚠️ URL을 입력해주세요'); return; }
+  if (!url.startsWith('http')) { showToast('⚠️ http:// 또는 https:// 로 시작해야 합니다'); return; }
+
+  const arr = getSources(key);
+  if (arr.find(i => i.url === url)) { showToast('⚠️ 이미 등록된 URL입니다'); return; }
+
+  arr.push({ name, url });
+  saveSources(key, arr);
+  if (urlEl)  urlEl.value  = '';
+  if (nameEl) nameEl.value = '';
+  renderList(key);
+  showToast(`✅ 추가됨: ${name}`);
+}
+
+function removeSource(type, idx) {
+  const arr = getSources(type);
+  arr.splice(idx, 1);
+  saveSources(type, arr);
+  renderList(type);
+  showToast('🗑 삭제되었습니다');
+}
+
+function saveSourceList() {
+  hideSourceModal();
+  showToast('💾 소스 목록 저장 완료');
+}
+
+// ================================================================
+//  사이드바 API 상태 표시
+// ================================================================
+// ================================================================
+//  키워드 관리 (카테고리별)
+// ================================================================
+
+// 기본값 — 엑셀에서 추출한 원본 키워드
+const DEFAULT_KEYWORDS = {
+  real_estate_market: [
+    "기준금리 인하 부동산","기준금리 상업용부동산","부동산 금리","역마진 해소 부동산",
+    "환율 부동산","고환율 영향 부동산","상업용부동산 투자수익률","자본수익률 오피스",
+    "캡레이트","투자 심리 회복 부동산","관망세 부동산","부동산PF 리스크","PF 브릿지론",
+    "부동산PF 부실","리츠 수익률","리츠 배당","공모리츠","리츠 투자",
+    "외국인 부동산 투자","글로벌 자본 부동산 유입","외자 빌딩 매입",
+    "상업용부동산 시장 전망","상업용부동산 동향","서울 상업용부동산 거래규모",
+    "부동산 세제","취득세 법인","부동산 규제 완화"
+  ],
+  office_lease: [
+    "A급 오피스","프라임 오피스","프라임급 오피스","오피스 공실률","서울 오피스 공실률",
+    "A급 오피스 공실률","CBD 오피스","GBD 오피스","YBD 오피스","도심권 임대료",
+    "강남 오피스 임대료","여의도 오피스 임대료","마곡 오피스","판교 오피스",
+    "용산 오피스","분당 오피스","성수 오피스","임대료 인상 오피스","임대료 상승 오피스",
+    "실질 임대료","렌트프리","임대 조건 협상","임대인 우위","임차인 우위 오피스",
+    "신규 임대차 계약","임대차 재계약","임차 전략","임차 비용 절감","권역 이탈 기업",
+    "기업 사옥 이전","본사 이전","기업 사무실 이전","오피스 신규 공급","대형 오피스 준공",
+    "프라임 빌딩 동향","실질 임대료 추이","NOC","권역별 순흡수면적","사옥 다운사이징"
+  ],
+  asset_transaction: [
+    "사옥 매입","빌딩 매입","오피스 매각","빌딩 매각 자문","전략적 투자자 SI",
+    "재무적 투자자 FI","자산 유동화 기업","자산 효율화 부동산","세일즈앤드리스백",
+    "세일즈앤리스백","S&LB","자산운용사 오피스 매입","부동산펀드 투자","오피스 거래 규모",
+    "빌딩 거래","매각 자문 부동산","투자 자문","캐피탈마켓 부동산","보유 부동산 매각",
+    "부동산 구조조정","기업 부동산 재편","사옥 확보","본사 사옥","랜드마크 오피스 거래",
+    "프라임 빌딩","딜 성사","거래 완료","매각 완료","보험사 빌딩 매각","금융사 자산 매각",
+    "IFRS17 부동산","자본건전성 자산 매각","셰어딜","선매입 약정"
+  ],
+  corporate_space: [
+    "워크플레이스 트렌드","업무 환경 혁신","하이브리드 근무 오피스","재택근무 비율",
+    "거점 오피스","분산 오피스","위성 오피스","공유 오피스","코워킹스페이스",
+    "오피스 리모델링","사옥 리뉴얼","인테리어 혁신","사무공간 효율화","좌석 활용률",
+    "MZ세대 오피스","직원 경험 EX","오피스 저층부 활용","사내 편의시설","사내 카페",
+    "공간 브랜딩","기업 문화 공간","오피스 면적 축소","평당 인원","근무지 유연화",
+    "직원 복지 공간","점유 전략 Occupancy"
+  ],
+  industrial_asset: [
+    "물류센터 공실률","수도권 물류센터","상온 물류센터","저온 냉동 물류센터",
+    "물류센터 임대료","물류 수급","3PL","이커머스 물류","풀필먼트센터","물류 자동화",
+    "스마트 물류센터","데이터센터 수요","데이터센터 공급","AI 데이터센터",
+    "클라우드 데이터센터","데이터센터 전력","전력 인허가 데이터센터","데이터센터 부지",
+    "수도권 데이터센터","제조 시설 이전","공장 부동산","첨단산업 입지",
+    "반도체 클러스터 부동산","산업단지 분양","지식산업센터","배터리 공장 부동산",
+    "이차전지 시설","하이퍼스케일 데이터센터","초대형 물류센터 공실률"
+  ],
+  smart_esg: [
+    "스마트빌딩","빌딩 자동화","BAS","프롭테크","부동산 테크","FM 디지털화",
+    "시설관리 디지털화","FM 혁신","건물 에너지 효율","에너지 절감 빌딩",
+    "빌딩 에너지 진단","탄소중립 건물","넷제로 빌딩","그린 리모델링","LEED 인증",
+    "BREEAM","그린빌딩 인증","RE100","재생에너지 조달","온실가스 배출권",
+    "K-ETS 부동산","ESG 경영 부동산","ESG 부동산","중대재해처벌법 건물",
+    "안전관리 의무","시설물 안전점검","안전점검 의무","디지털 트윈 FM",
+    "그린 프리미엄","빌딩 에너지 효율","BEI","넷제로 자산 가치"
+  ]
+};
+
+// 현재 편집 중인 카테고리
+let kwActiveCat = 'real_estate_market';
+
+// 키워드 불러오기 (localStorage 우선, 없으면 기본값)
+function loadKeywords() {
+  try {
+    const saved = localStorage.getItem('cre_keywords');
+    if (saved) return JSON.parse(saved);
+  } catch {}
+  return JSON.parse(JSON.stringify(DEFAULT_KEYWORDS)); // deep copy
+}
+
+// 키워드 저장
+function saveKeywords() {
+  const kw = loadKeywords();
+  localStorage.setItem('cre_keywords', JSON.stringify(kw));
+  updateKwBadge();
+
+  const status = document.getElementById('kwSaveStatus');
+  if (status) {
+    status.textContent = '✅ 저장됨 · ' + new Date().toLocaleTimeString('ko-KR');
+    status.style.color = '#16a34a';
+    setTimeout(() => { status.textContent = '변경사항은 자동 저장됩니다'; status.style.color = ''; }, 2000);
+  }
+}
+
+function updateKwBadge() {
+  const kw   = loadKeywords();
+  const total = Object.values(kw).reduce((s, arr) => s + arr.length, 0);
+  const badge = document.getElementById('kwTotalBadge');
+  if (badge) badge.textContent = total;
+  const modalTotal = document.getElementById('kwModalTotal');
+  if (modalTotal) modalTotal.textContent = `총 ${total}개`;
+}
+
+// ── 모달 열기 / 닫기 ──────────────────────────────────────────
+function showKeywordModal() {
+  document.getElementById('keywordModal').classList.add('active');
+  kwActiveCat = 'real_estate_market';
+  renderKwCatTabs();
+  renderKeywordChips();
+  updateKwBadge();
+}
+function hideKeywordModal() {
+  document.getElementById('keywordModal').classList.remove('active');
+}
+
+// ── 카테고리 탭 렌더링 ────────────────────────────────────────
+function renderKwCatTabs() {
+  const kw = loadKeywords();
+  const container = document.getElementById('kwCatTabs');
+  container.innerHTML = Object.entries(CAT_META)
+    .filter(([id]) => id !== 'all')
+    .map(([id, meta]) => {
+      const cnt = (kw[id] || []).length;
+      return `<button class="kw-cat-tab ${kwActiveCat === id ? 'active' : ''}"
+        onclick="kwActiveCat='${id}'; renderKwCatTabs(); renderKeywordChips();">
+        ${meta.icon} ${meta.label}
+        <span class="kw-tab-count">${cnt}</span>
+      </button>`;
+    }).join('');
+}
+
+// ── 키워드 칩 렌더링 ─────────────────────────────────────────
+function renderKeywordChips() {
+  const kw      = loadKeywords();
+  const query   = (document.getElementById('kwSearchInput')?.value || '').trim().toLowerCase();
+  const list    = kw[kwActiveCat] || [];
+  const filtered = query ? list.filter(k => k.toLowerCase().includes(query)) : list;
+
+  // 카운트 표시
+  const countEl = document.getElementById('kwCatCount');
+  if (countEl) {
+    countEl.textContent = query
+      ? `검색 결과 ${filtered.length} / ${list.length}개`
+      : `${list.length}개`;
+  }
+
+  const container = document.getElementById('kwChipsArea');
+  if (!filtered.length) {
+    container.innerHTML = `<div style="text-align:center; padding:40px; color:var(--text-muted);">
+      <div style="font-size:2rem; margin-bottom:8px;">${query ? '🔍' : '📭'}</div>
+      <div style="font-size:.85rem;">${query ? `"${query}" 검색 결과가 없습니다` : '등록된 키워드가 없습니다'}</div>
+    </div>`;
+    return;
+  }
+
+  const chipsHtml = filtered.map(kw => {
+    const hl = query && kw.toLowerCase().includes(query);
+    return `<span class="kw-chip${hl ? ' highlight' : ''}">
+      ${hl ? kw.replace(new RegExp(`(${query})`, 'gi'), '<mark style="background:#fde047;border-radius:2px;padding:0 1px;">$1</mark>') : kw}
+      <button class="kw-chip-del" onclick="removeKeyword('${kwActiveCat}', '${kw.replace(/'/g, "\\'")}')">✕</button>
+    </span>`;
+  }).join('');
+
+  container.innerHTML = `<div class="kw-chips-container">${chipsHtml}</div>`;
+}
+
+// ── 키워드 추가 ────────────────────────────────────────────────
+function addKeywordFromInput() {
+  const input = document.getElementById('kwAddInput');
+  const raw   = input?.value || '';
+  const keywords = raw.split(/[,\n]/).map(k => k.trim()).filter(Boolean);
+
+  if (!keywords.length) { showToast('⚠️ 키워드를 입력해주세요'); return; }
+
+  const kw = loadKeywords();
+  if (!kw[kwActiveCat]) kw[kwActiveCat] = [];
+
+  let added = 0;
+  keywords.forEach(k => {
+    if (!kw[kwActiveCat].includes(k)) {
+      kw[kwActiveCat].push(k);
+      added++;
+    }
+  });
+
+  localStorage.setItem('cre_keywords', JSON.stringify(kw));
+  if (input) input.value = '';
+  renderKwCatTabs();
+  renderKeywordChips();
+  updateKwBadge();
+  saveKeywords();
+
+  const msg = added > 1 ? `✅ ${added}개 키워드 추가됨` : added === 1 ? `✅ "${keywords[0]}" 추가됨` : '⚠️ 이미 존재하는 키워드입니다';
+  showToast(msg);
+}
+
+// ── 키워드 삭제 ────────────────────────────────────────────────
+function removeKeyword(catId, keyword) {
+  const kw = loadKeywords();
+  if (!kw[catId]) return;
+  kw[catId] = kw[catId].filter(k => k !== keyword);
+  localStorage.setItem('cre_keywords', JSON.stringify(kw));
+  renderKwCatTabs();
+  renderKeywordChips();
+  updateKwBadge();
+  saveKeywords();
+}
+
+// ── 일괄 입력 ─────────────────────────────────────────────────
+function pasteKeywords() {
+  document.getElementById('kwBulkModal').classList.add('active');
+  document.getElementById('kwBulkText').value = '';
+  setTimeout(() => document.getElementById('kwBulkText').focus(), 100);
+}
+
+function applyBulkKeywords() {
+  const raw = document.getElementById('kwBulkText').value;
+  const keywords = raw.split(/[,\n]/).map(k => k.trim()).filter(Boolean);
+
+  if (!keywords.length) { showToast('⚠️ 입력된 키워드가 없습니다'); return; }
+
+  const kw = loadKeywords();
+  if (!kw[kwActiveCat]) kw[kwActiveCat] = [];
+
+  let added = 0;
+  keywords.forEach(k => {
+    if (!kw[kwActiveCat].includes(k)) { kw[kwActiveCat].push(k); added++; }
+  });
+
+  localStorage.setItem('cre_keywords', JSON.stringify(kw));
+  document.getElementById('kwBulkModal').classList.remove('active');
+  renderKwCatTabs();
+  renderKeywordChips();
+  updateKwBadge();
+  saveKeywords();
+  showToast(`✅ ${added}개 키워드 추가됨 (${keywords.length - added}개 중복 제외)`);
+}
+
+// ── 엑셀 불러오기 ─────────────────────────────────────────────
+function importKeywordsFromXlsx(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const workbook = XLSX.read(e.target.result, { type: 'array' });
+      const ws = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null });
+
+      // 컬럼 0,2,4,6,8,10 → 카테고리 순서
+      const catOrder = ['real_estate_market','office_lease','asset_transaction',
+                        'corporate_space','industrial_asset','smart_esg'];
+      const colMap   = [0, 2, 4, 6, 8, 10];
+      const newKw    = {};
+      catOrder.forEach(k => newKw[k] = []);
+
+      rows.slice(1).forEach(row => { // 첫 행(헤더) 스킵
+        colMap.forEach((col, i) => {
+          const val = row[col];
+          if (val && String(val).trim()) {
+            newKw[catOrder[i]].push(String(val).trim());
+          }
+        });
+      });
+
+      const total = Object.values(newKw).reduce((s, a) => s + a.length, 0);
+      if (!total) { showToast('⚠️ 키워드를 찾을 수 없습니다. 파일 형식을 확인해주세요'); return; }
+
+      // 기존 키워드에 병합 vs 덮어쓰기
+      if (confirm(`엑셀에서 ${total}개 키워드를 불러왔습니다.\n\n[확인] 현재 키워드에 병합\n[취소] 현재 키워드를 덮어쓰기`)) {
+        // 병합
+        const existing = loadKeywords();
+        catOrder.forEach(k => {
+          newKw[k].forEach(kw => {
+            if (!existing[k].includes(kw)) existing[k].push(kw);
+          });
+        });
+        localStorage.setItem('cre_keywords', JSON.stringify(existing));
+      } else {
+        // 덮어쓰기
+        localStorage.setItem('cre_keywords', JSON.stringify(newKw));
+      }
+
+      renderKwCatTabs();
+      renderKeywordChips();
+      updateKwBadge();
+      showToast(`✅ 엑셀 불러오기 완료 (${total}개)`);
+    } catch(err) {
+      showToast('❌ 엑셀 파싱 오류 — 파일을 확인해주세요');
+      console.error(err);
+    }
+    input.value = '';
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ── JSON 내보내기 ─────────────────────────────────────────────
+function exportKeywordsJson() {
+  const kw   = loadKeywords();
+  const json = JSON.stringify(kw, null, 2);
+  const blob = new Blob([json], { type: 'application/json; charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = 'keywords.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('📤 keywords.json 다운로드 완료');
+}
+
+// ── 기본값 초기화 ─────────────────────────────────────────────
+function resetKeywordsToDefault() {
+  if (!confirm('모든 키워드를 엑셀 원본 기본값으로 초기화하시겠습니까?\n현재 편집 내용이 모두 사라집니다.')) return;
+  localStorage.setItem('cre_keywords', JSON.stringify(DEFAULT_KEYWORDS));
+  renderKwCatTabs();
+  renderKeywordChips();
+  updateKwBadge();
+  showToast('↺ 키워드가 기본값으로 초기화되었습니다');
+}
+
+// ================================================================
+//  페이지 전환 (탭)
+// ================================================================
+function switchPage(page, tabEl) {
+  // 탭 active 전환
+  document.querySelectorAll('.topnav-tab').forEach(t => t.classList.remove('active'));
+  if (tabEl) tabEl.classList.add('active');
+
+  const curation = document.getElementById('mainContent');
+  const history  = document.getElementById('historyPage');
+
+  if (page === 'history') {
+    curation.style.display = 'none';
+    history.style.display  = '';
+    renderHistoryPage();
+  } else {
+    curation.style.display = '';
+    history.style.display  = 'none';
+  }
+}
+
+// ================================================================
+//  히스토리 저장 / 불러오기
+// ================================================================
+const HIST_KEY = 'cre_send_history';
+
+function loadHistory() {
+  try { return JSON.parse(localStorage.getItem(HIST_KEY) || '[]'); }
+  catch { return []; }
+}
+
+function saveHistoryRecord(record) {
+  const list = loadHistory();
+  list.unshift(record); // 최신순
+  // 최대 200건 보관
+  if (list.length > 200) list.splice(200);
+  localStorage.setItem(HIST_KEY, JSON.stringify(list));
+}
+
+// generateFinalHTML 호출 후 히스토리 저장 (기존 함수에 hook)
+function recordFinalize(selectedItems) {
+  const now     = new Date();
+  const days    = ['일','월','화','수','목','금','토'];
+  const grouped = {};
+  const CAT_ORDER = ['real_estate_market','office_lease','asset_transaction',
+                     'corporate_space','industrial_asset','smart_esg'];
+
+  CAT_ORDER.forEach(c => { grouped[c] = []; });
+  selectedItems.forEach(item => {
+    const cat = item.category || 'office_lease';
+    if (!grouped[cat]) grouped[cat] = [];
+    grouped[cat].push({
+      title:      item.title   || '',
+      link:       item.link    || '',
+      source:     item.source  || '',
+      summary:    item.ai_summary || item.description || '',
+      comment:    item.ai_comment || '',
+      relevance:  item.ai_relevance || '',
+    });
+  });
+
+  const record = {
+    id:         now.getTime(),
+    dateStr:    now.toLocaleDateString('ko-KR', {year:'numeric',month:'2-digit',day:'2-digit'}),
+    timeStr:    now.toLocaleTimeString('ko-KR', {hour:'2-digit',minute:'2-digit'}),
+    dayOfWeek:  days[now.getDay()],
+    dayIndex:   now.getDay(),
+    total:      selectedItems.length,
+    catCounts:  Object.fromEntries(CAT_ORDER.map(c => [c, grouped[c].length])),
+    articles:   grouped,
+  };
+  saveHistoryRecord(record);
+
+  // 히스토리 페이지가 현재 열려 있으면 즉시 갱신
+  const histPage = document.getElementById('historyPage');
+  if (histPage && histPage.style.display !== 'none') {
+    renderHistoryPage();
+  }
+}
+
+// ================================================================
+//  히스토리 페이지 렌더링
+// ================================================================
+let histActiveCat = 'all';
+
+function renderHistoryPage() {
+  const list = loadHistory();
+
+  // 기간 버튼 active 동기화
+  document.querySelectorAll('.chart-period-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.period === chartCurrentPeriod);
+  });
+
+  renderHistStatCards(list);
+  renderHistDayChart(list);
+  renderHistCatBars(list);
+  renderHistList(list, histActiveCat);
+}
+
+// ── 요약 스탯 카드 ─────────────────────────────────────────────
+function renderHistStatCards(list) {
+  const el = document.getElementById('histStatCards');
+  if (!el) return;
+  if (!list.length) { el.innerHTML = ''; return; }
+
+  const totalSends    = list.length;
+  const totalArticles = list.reduce((s, r) => s + r.total, 0);
+  const avgArticles   = (totalArticles / totalSends).toFixed(1);
+
+  // 카테고리별 누적 건수
+  const catTotals = {};
+  list.forEach(r => {
+    Object.entries(r.catCounts || {}).forEach(([c, cnt]) => {
+      catTotals[c] = (catTotals[c] || 0) + cnt;
+    });
+  });
+  const topCat  = Object.entries(catTotals).sort((a, b) => b[1] - a[1])[0];
+  const topMeta = topCat ? (CAT_META[topCat[0]] || { icon:'📋', label: topCat[0] }) : null;
+
+  // 최다 큐레이션 요일
+  const dayCounts = [0,0,0,0,0,0,0];
+  list.forEach(r => dayCounts[r.dayIndex]++);
+  const dayNames  = ['일','월','화','수','목','금','토'];
+  const topDayIdx = dayCounts.indexOf(Math.max(...dayCounts));
+
+  // 회차당 평균 HIGH 기사 비율
+  const highRatio = (() => {
+    let highTotal = 0, artTotal = 0;
+    list.forEach(r => {
+      Object.values(r.articles || {}).forEach(arts => {
+        arts.forEach(a => {
+          artTotal++;
+          if (a.relevance === 'HIGH') highTotal++;
+        });
+      });
+    });
+    return artTotal > 0 ? Math.round((highTotal / artTotal) * 100) : 0;
+  })();
+
+  // 최근 발송일
+  const lastDate = list[0]?.dateStr || '—';
+  const lastTime = list[0]?.timeStr || '';
+
+  const cards = [
+    {
+      cls: 'blue', label: '총 큐레이션 횟수',
+      value: totalSends + '회',
+      sub: '마감 확정 기준'
+    },
+    {
+      cls: 'green', label: '총 선별 기사',
+      value: totalArticles + '건',
+      sub: `평균 ${avgArticles}건/회`
+    },
+    {
+      cls: 'amber', label: '최다 큐레이션 요일',
+      value: dayNames[topDayIdx] + '요일',
+      sub: `${dayCounts[topDayIdx]}회`
+    },
+    {
+      cls: 'purple', label: '최다 선택 카테고리',
+      value: topMeta ? topMeta.icon + ' ' + topMeta.label : '—',
+      sub: topCat ? `누적 ${topCat[1]}건` : '',
+      small: true   // 텍스트가 길 수 있으므로 폰트 축소 플래그
+    },
+    {
+      cls: 'cyan', label: '🔴 HIGH 비율',
+      value: highRatio + '%',
+      sub: '전체 선별 기사 기준'
+    },
+  ];
+
+  el.innerHTML = cards.map(s => `
+    <div class="hist-stat-card ${s.cls}">
+      <div class="hist-stat-label">${s.label}</div>
+      <div class="hist-stat-value" style="${s.small ? 'font-size:clamp(.75rem,1.8vw,1.1rem); line-height:1.3; word-break:keep-all;' : ''}">${s.value}</div>
+      <div class="hist-stat-sub">${s.sub}</div>
+    </div>`).join('');
+
+  document.getElementById('historySubtitle').textContent =
+    `마감 확정 기준 · 총 ${totalSends}회 큐레이션 · ${totalArticles}건 선별`;
+}
+
+// ================================================================
+//  요일별 큐레이션 차트 (Chart.js — 스택 막대 + 라인 + 도넛)
+// ================================================================
+const CAT_ORDER_CHART = ['real_estate_market','office_lease','asset_transaction',
+                         'corporate_space','industrial_asset','smart_esg'];
+const CAT_COLORS_CHART = {
+  real_estate_market: '#3b82f6',
+  office_lease:       '#10b981',
+  asset_transaction:  '#f59e0b',
+  corporate_space:    '#8b5cf6',
+  industrial_asset:   '#ef4444',
+  smart_esg:          '#06b6d4',
+};
+
+let chartBarInstance   = null;
+let chartDonutInstance = null;
+let chartCurrentPeriod = 'week';   // week | month | all | custom
+let chartCustomFrom    = null;
+let chartCustomTo      = null;
+let chartAllList       = [];       // 전체 히스토리 캐시
+
+// ── 기간 필터 적용 ────────────────────────────────────────────
+function setChartPeriod(period, btn) {
+  chartCurrentPeriod = period;
+  document.querySelectorAll('.chart-period-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+
+  const customEl = document.getElementById('chartCustomRange');
+  if (customEl) customEl.style.display = period === 'custom' ? 'flex' : 'none';
+
+  if (period !== 'custom') renderHistDayChart(chartAllList);
+}
+
+function applyCustomPeriod() {
+  const from = document.getElementById('chartDateFrom')?.value;
+  const to   = document.getElementById('chartDateTo')?.value;
+  if (!from || !to) { showToast('⚠️ 시작일과 종료일을 모두 입력해주세요'); return; }
+  chartCustomFrom = from;
+  chartCustomTo   = to;
+  renderHistDayChart(chartAllList);
+}
+
+// ── 기간에 따른 히스토리 필터링 ──────────────────────────────
+function filterListByPeriod(list) {
+  const now = new Date();
+  if (chartCurrentPeriod === 'week') {
+    const cutoff = new Date(now); cutoff.setDate(cutoff.getDate() - 7);
+    return list.filter(r => new Date(r.id) >= cutoff);
+  }
+  if (chartCurrentPeriod === 'month') {
+    const cutoff = new Date(now); cutoff.setMonth(cutoff.getMonth() - 1);
+    return list.filter(r => new Date(r.id) >= cutoff);
+  }
+  if (chartCurrentPeriod === 'custom' && chartCustomFrom && chartCustomTo) {
+    const from = new Date(chartCustomFrom);
+    const to   = new Date(chartCustomTo); to.setHours(23,59,59);
+    return list.filter(r => { const d = new Date(r.id); return d >= from && d <= to; });
+  }
+  return list; // all
+}
+
+// ── 기간 라벨 텍스트 ─────────────────────────────────────────
+function getPeriodLabel(filtered) {
+  if (!filtered.length) return '데이터 없음';
+  const sorted = [...filtered].sort((a,b) => a.id - b.id);
+  const from   = sorted[0].dateStr;
+  const to     = sorted[sorted.length-1].dateStr;
+  return from === to ? from : `${from} ~ ${to}`;
+}
+
+// ── 메인 렌더 함수 ────────────────────────────────────────────
+function renderHistDayChart(list) {
+  chartAllList = list;
+  const filtered = filterListByPeriod(list);
+
+  // 기간 라벨
+  const labelEl = document.getElementById('chartPeriodLabel');
+  if (labelEl) labelEl.textContent = `📌 ${getPeriodLabel(filtered)}`;
+
+  // 범례
+  renderChartLegend();
+
+  // 데이터 집계: 요일별(0~6) × 카테고리별
+  const DAY_NAMES  = ['일','월','화','수','목','금','토'];
+  const dayData    = {}; // { dayIdx: { catId: count } }
+  DAY_NAMES.forEach((_, i) => {
+    dayData[i] = {};
+    CAT_ORDER_CHART.forEach(c => { dayData[i][c] = 0; });
+  });
+  filtered.forEach(r => {
+    CAT_ORDER_CHART.forEach(c => {
+      dayData[r.dayIndex][c] += (r.catCounts?.[c] || 0);
+    });
+  });
+
+  // 일자별(날짜순) 추이용 — 라인 차트
+  const byDate = {};
+  filtered.forEach(r => {
+    if (!byDate[r.dateStr]) byDate[r.dateStr] = 0;
+    byDate[r.dateStr] += r.total;
+  });
+  const dateLabels  = Object.keys(byDate).sort();
+  const dateTotals  = dateLabels.map(d => byDate[d]);
+
+  // ── 스택 막대 + 라인 복합 차트 ───────────────────────────
+  const barCtx = document.getElementById('histBarChart');
+  if (!barCtx) return;
+
+  if (chartBarInstance) { chartBarInstance.destroy(); chartBarInstance = null; }
+
+  const barDatasets = CAT_ORDER_CHART.map(catId => {
+    const meta = CAT_META[catId] || { label: catId };
+    return {
+      type:            'bar',
+      label:           meta.label,
+      data:            DAY_NAMES.map((_, i) => dayData[i][catId]),
+      backgroundColor: CAT_COLORS_CHART[catId] + 'cc',
+      borderColor:     CAT_COLORS_CHART[catId],
+      borderWidth:     1,
+      borderRadius:    { topLeft:3, topRight:3 },
+      stack:           'main',
+    };
+  });
+
+  // 요일별 합계 라인 오버레이
+  const dayTotals = DAY_NAMES.map((_, i) =>
+    CAT_ORDER_CHART.reduce((s, c) => s + dayData[i][c], 0)
+  );
+  barDatasets.push({
+    type:            'line',
+    label:           '합계',
+    data:            dayTotals,
+    borderColor:     '#1e293b',
+    borderWidth:     2,
+    pointBackgroundColor: '#1e293b',
+    pointRadius:     4,
+    pointHoverRadius: 6,
+    fill:            false,
+    tension:         0.35,
+    yAxisID:         'y',
+    stack:           undefined,
+    order:           -1,
+  });
+
+  chartBarInstance = new Chart(barCtx, {
+    data: {
+      labels:   DAY_NAMES,
+      datasets: barDatasets,
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            footer: (items) => {
+              const sum = items.filter(i => i.dataset.type === 'bar')
+                               .reduce((s,i) => s + i.parsed.y, 0);
+              return `합계: ${sum}건`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          stacked: true,
+          grid: { display: false },
+          ticks: { font: { size: 11, weight: '600' } },
+        },
+        y: {
+          stacked: true,
+          beginAtZero: true,
+          grid: { color: '#f1f5f9' },
+          ticks: {
+            stepSize: 1,
+            font: { size: 10 },
+            callback: v => Number.isInteger(v) ? v : null,
+          },
+        },
+      },
+    },
+  });
+
+  // ── 도넛 차트 (카테고리별 비율) ──────────────────────────
+  const donutCtx = document.getElementById('histDonutChart');
+  if (!donutCtx) return;
+
+  if (chartDonutInstance) { chartDonutInstance.destroy(); chartDonutInstance = null; }
+
+  const catTotals  = CAT_ORDER_CHART.map(c =>
+    filtered.reduce((s, r) => s + (r.catCounts?.[c] || 0), 0)
+  );
+  const grandTotal = catTotals.reduce((a,b) => a+b, 0);
+
+  const donutTotalEl = document.getElementById('histDonutTotal');
+  if (donutTotalEl) donutTotalEl.textContent = grandTotal + '건';
+
+  chartDonutInstance = new Chart(donutCtx, {
+    type: 'doughnut',
+    data: {
+      labels:   CAT_ORDER_CHART.map(c => (CAT_META[c] || {}).label || c),
+      datasets: [{
+        data:            catTotals,
+        backgroundColor: CAT_ORDER_CHART.map(c => CAT_COLORS_CHART[c] + 'dd'),
+        borderColor:     CAT_ORDER_CHART.map(c => CAT_COLORS_CHART[c]),
+        borderWidth:     2,
+        hoverOffset:     6,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '62%',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              const pct = grandTotal ? Math.round((ctx.parsed / grandTotal) * 100) : 0;
+              return ` ${ctx.parsed}건 (${pct}%)`;
+            }
+          }
+        }
+      },
+    },
+  });
+}
+
+// ── 범례 렌더 ─────────────────────────────────────────────────
+function renderChartLegend() {
+  const el = document.getElementById('chartLegend');
+  if (!el) return;
+  el.innerHTML = CAT_ORDER_CHART.map(catId => {
+    const meta = CAT_META[catId] || { icon:'', label: catId };
+    const clr  = CAT_COLORS_CHART[catId];
+    return `<div style="display:flex; align-items:center; gap:5px; font-size:.7rem; color:var(--text-secondary); white-space:nowrap;">
+      <span style="width:10px; height:10px; border-radius:2px; background:${clr}; display:inline-block; flex-shrink:0;"></span>
+      ${meta.icon} ${meta.label}
+    </div>`;
+  }).join('');
+}
+
+// ── 카테고리별 분포 바 ─────────────────────────────────────────
+function renderHistCatBars(list) {
+  const el = document.getElementById('histCatBars');
+  if (!el) return;
+
+  const CAT_ORDER = ['real_estate_market','office_lease','asset_transaction',
+                     'corporate_space','industrial_asset','smart_esg'];
+  const catColors = {
+    real_estate_market: '#3b82f6', office_lease: '#10b981',
+    asset_transaction:  '#f59e0b', corporate_space: '#8b5cf6',
+    industrial_asset:   '#ef4444', smart_esg:       '#06b6d4',
+  };
+  const totals = {};
+  CAT_ORDER.forEach(c => { totals[c] = 0; });
+  list.forEach(r => {
+    Object.entries(r.catCounts || {}).forEach(([c, cnt]) => {
+      if (totals[c] !== undefined) totals[c] += cnt;
+    });
+  });
+  const grand = Object.values(totals).reduce((a,b) => a+b, 0) || 1;
+
+  el.innerHTML = CAT_ORDER.map(catId => {
+    const meta = CAT_META[catId] || { icon:'📋', label: catId };
+    const cnt  = totals[catId];
+    const pct  = Math.round((cnt / grand) * 100);
+    const clr  = catColors[catId] || '#94a3b8';
+    return `<div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+      <div style="width:140px; font-size:.75rem; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex-shrink:0;">
+        ${meta.icon} ${meta.label}
+      </div>
+      <div style="flex:1; background:#f1f5f9; border-radius:4px; height:10px; overflow:hidden;">
+        <div style="width:${pct}%; height:100%; background:${clr}; border-radius:4px; transition:width .4s;"></div>
+      </div>
+      <div style="width:52px; text-align:right; font-size:.73rem; font-weight:700; color:var(--text-secondary); flex-shrink:0;">
+        ${cnt}건 <span style="font-weight:400; color:var(--text-muted);">${pct}%</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── 히스토리 목록 ──────────────────────────────────────────────
+function filterHistory(cat, el) {
+  histActiveCat = cat;
+  document.querySelectorAll('.hist-cat-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderHistList(loadHistory(), cat);
+}
+
+function renderHistList(list, cat) {
+  const listEl  = document.getElementById('histList');
+  const emptyEl = document.getElementById('histEmpty');
+  if (!listEl) return;
+
+  const CAT_ORDER = ['real_estate_market','office_lease','asset_transaction',
+                     'corporate_space','industrial_asset','smart_esg'];
+  const catColors = {
+    real_estate_market:'#3b82f6', office_lease:'#10b981',
+    asset_transaction:'#f59e0b',  corporate_space:'#8b5cf6',
+    industrial_asset:'#ef4444',   smart_esg:'#06b6d4',
+  };
+  const dayColors = {일:'#ef4444',월:'#3b82f6',화:'#3b82f6',수:'#3b82f6',목:'#3b82f6',금:'#10b981',토:'#94a3b8'};
+
+  // 카테고리 필터
+  const filtered = cat === 'all' ? list
+    : list.filter(r => (r.catCounts?.[cat] || 0) > 0);
+
+  if (!filtered.length) {
+    listEl.innerHTML = '';
+    if (emptyEl) emptyEl.style.display = '';
+    return;
+  }
+  if (emptyEl) emptyEl.style.display = 'none';
+
+  listEl.innerHTML = filtered.map((record, idx) => {
+    const entryId = `hentry_${record.id}`;
+
+    // 헤더: 날짜 + 요일 + 건수 + 카테고리 미니 바
+    const dayClr = dayColors[record.dayOfWeek] || '#64748b';
+    const catSummary = CAT_ORDER
+      .filter(c => (record.catCounts?.[c] || 0) > 0)
+      .map(c => {
+        const meta = CAT_META[c] || { icon:'📋' };
+        return `<span style="font-size:.65rem; padding:1px 6px; background:${catColors[c]}22; color:${catColors[c]}; border-radius:4px; font-weight:600;">${meta.icon} ${record.catCounts[c]}</span>`;
+      }).join('');
+
+    // 기사 목록 (카테고리 필터 적용)
+    const catsToShow = cat === 'all' ? CAT_ORDER : [cat];
+    let articlesHtml = '';
+    catsToShow.forEach(catId => {
+      const arts = record.articles?.[catId] || [];
+      if (!arts.length) return;
+      const meta = CAT_META[catId] || { icon:'📋', label: catId };
+      articlesHtml += `<div style="margin-bottom:12px;">
+        <div style="font-size:.7rem; font-weight:700; color:${catColors[catId]}; text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px; display:flex; align-items:center; gap:5px;">
+          <span style="width:8px;height:8px;border-radius:50%;background:${catColors[catId]};display:inline-block;"></span>
+          ${meta.label} · ${arts.length}건
+        </div>`;
+      arts.forEach(art => {
+        articlesHtml += `<div class="hist-article-row">
+          <div style="flex:1; min-width:0;">
+            <div style="font-weight:600; color:var(--text-primary); line-height:1.4; margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+              ${art.link ? `<a href="${art.link}" target="_blank" style="color:inherit; text-decoration:none;">${art.title}</a>` : art.title}
+            </div>
+            ${art.summary ? `<div style="font-size:.73rem; color:var(--text-secondary); line-height:1.5; margin-bottom:2px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${art.summary}</div>` : ''}
+            ${art.comment ? `<div style="font-size:.7rem; color:#92400e; background:#fef9c3; padding:2px 7px; border-radius:4px; display:inline-block;">💬 ${art.comment}</div>` : ''}
+          </div>
+          <div style="flex-shrink:0; display:flex; flex-direction:column; align-items:flex-end; gap:3px;">
+            <span style="font-size:.62rem; background:#f1f5f9; color:#64748b; padding:1px 6px; border-radius:3px;">${art.source}</span>
+            ${art.relevance === 'HIGH' ? '<span style="font-size:.6rem; color:#dc2626; font-weight:700;">🔴 HIGH</span>' : ''}
+          </div>
+        </div>`;
+      });
+      articlesHtml += '</div>';
+    });
+
+    return `<div class="hist-entry" id="${entryId}">
+      <div class="hist-entry-header" onclick="toggleHistEntry('${entryId}')">
+        <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:0;">
+          <span style="font-size:.75rem; font-weight:800; padding:3px 8px; border-radius:5px; background:${dayClr}22; color:${dayClr}; flex-shrink:0;">
+            ${record.dayOfWeek}
+          </span>
+          <div style="min-width:0;">
+            <div style="font-size:.85rem; font-weight:700; color:var(--text-primary);">${record.dateStr} ${record.timeStr}</div>
+            <div style="display:flex; gap:4px; margin-top:4px; flex-wrap:wrap;">${catSummary}</div>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px; flex-shrink:0;">
+          <span style="font-size:.8rem; font-weight:700; color:var(--accent-blue); background:rgba(59,130,246,.08); padding:3px 10px; border-radius:6px;">
+            ${record.total}건
+          </span>
+          <button onclick="deleteHistEntry(${record.id}, event)" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:.8rem;padding:2px 4px;" title="삭제">🗑</button>
+          <span style="color:var(--text-muted); font-size:.8rem;" id="${entryId}_arrow">▼</span>
+        </div>
+      </div>
+      <div class="hist-entry-body" id="${entryId}_body">
+        ${articlesHtml || '<div style="color:var(--text-muted);font-size:.8rem;padding:8px 0;">기사 데이터 없음</div>'}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleHistEntry(entryId) {
+  const body  = document.getElementById(entryId + '_body');
+  const arrow = document.getElementById(entryId + '_arrow');
+  if (!body) return;
+  const open = body.classList.toggle('open');
+  if (arrow) arrow.textContent = open ? '▲' : '▼';
+}
+
+function deleteHistEntry(id, event) {
+  event.stopPropagation();
+  if (!confirm('이 발송 기록을 삭제하시겠습니까?')) return;
+  const list = loadHistory().filter(r => r.id !== id);
+  localStorage.setItem(HIST_KEY, JSON.stringify(list));
+  renderHistoryPage();
+  showToast('🗑 기록이 삭제되었습니다');
+}
+
+function clearAllHistory() {
+  if (!confirm('모든 발송 히스토리를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) return;
+  localStorage.removeItem(HIST_KEY);
+  renderHistoryPage();
+  showToast('🗑 히스토리 전체 삭제 완료');
+}
+
+function exportHistoryJson() {
+  const list = loadHistory();
+  if (!list.length) { showToast('⚠️ 저장된 히스토리가 없습니다'); return; }
+  const blob = new Blob([JSON.stringify(list, null, 2)], {type:'application/json;charset=utf-8'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = `CRE_History_${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('📤 히스토리 JSON 다운로드 완료');
+}
+
+// ── 개발용 더미 데이터 시드 (콘솔에서 seedHistory() 실행) ────
+function seedHistory() {
+  const CAT_ORDER = ['real_estate_market','office_lease','asset_transaction',
+                     'corporate_space','industrial_asset','smart_esg'];
+  const SAMPLE_TITLES = {
+    real_estate_market: ['기준금리 동결에 상업용 부동산 관망세 지속','캡레이트 상승에 빌딩 거래 위축','외자 빌딩 매입 재개 조짐'],
+    office_lease:       ['CBD A급 오피스 공실률 3.2%로 하락','강남 오피스 임대료 평당 12만원 돌파','렌트프리 6개월 제공 신규 임대 증가'],
+    asset_transaction:  ['보험사 여의도 빌딩 매각 추진','S&LB 방식 기업 부동산 재편 활발','랜드마크 오피스 딜 성사 소식'],
+    corporate_space:    ['하이브리드 근무 정착에 거점 오피스 수요 급증','MZ세대 위한 사내 카페·편의시설 경쟁','좌석 활용률 혁신 스타트업 확산'],
+    industrial_asset:   ['수도권 물류센터 공실률 소폭 개선','AI 데이터센터 전력 인허가 지연 심각','3PL 이커머스 풀필먼트 수요 지속'],
+    smart_esg:          ['LEED 인증 빌딩 임대료 프리미엄 확인','탄소중립 목표 RE100 참여 기업 증가','FM 디지털화 스마트빌딩 확대'],
+  };
+  const days = ['일','월','화','수','목','금','토'];
+  const records = [];
+  const base = Date.now() - 30 * 24 * 60 * 60 * 1000;
+
+  for (let i = 0; i < 20; i++) {
+    const ts  = new Date(base + i * 1.5 * 24 * 60 * 60 * 1000 + Math.random() * 3600000);
+    const catCounts = {};
+    const articles  = {};
+    let total = 0;
+    CAT_ORDER.forEach(c => {
+      const cnt  = Math.floor(Math.random() * 4);
+      catCounts[c] = cnt;
+      total += cnt;
+      const titles = SAMPLE_TITLES[c] || [];
+      articles[c]  = titles.slice(0, cnt).map(t => ({
+        title: t, link: '', source: ['조선비즈','한국경제','이데일리','파이낸셜뉴스'][Math.floor(Math.random()*4)],
+        summary: t + '에 대한 상세 내용입니다.', comment: '', relevance: Math.random() > 0.5 ? 'HIGH' : 'MEDIUM',
+      }));
+    });
+    records.push({
+      id: ts.getTime(), dateStr: ts.toLocaleDateString('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit'}),
+      timeStr: ts.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}),
+      dayOfWeek: days[ts.getDay()], dayIndex: ts.getDay(), total, catCounts, articles,
+    });
+  }
+  records.sort((a,b) => b.id - a.id);
+  localStorage.setItem(HIST_KEY, JSON.stringify(records));
+  showToast('🌱 더미 히스토리 20건 생성 완료');
+  if (document.getElementById('historyPage').style.display !== 'none') renderHistoryPage();
+}
+
+function updateApiStatusBadges() {
+  const naverId = localStorage.getItem('cre_naver_id');
+  const googleK = localStorage.getItem('cre_google_key');
+  const claudeK = localStorage.getItem('cre_claude_key');
+
+  const nBadge = document.getElementById('srcNaverBadge');
+  const gBadge = document.getElementById('srcGoogleBadge');
+  const cBadge = document.getElementById('srcClaudeBadge');
+
+  if (nBadge) {
+    nBadge.textContent = naverId ? 'KEY ✓' : '키없음';
+    nBadge.style.background = naverId ? 'var(--accent-green)' : '#94a3b8';
+  }
+  if (gBadge) {
+    gBadge.textContent = googleK ? 'KEY ✓' : '키없음';
+    gBadge.style.background = googleK ? 'var(--accent-green)' : '#94a3b8';
+  }
+  if (cBadge) {
+    cBadge.textContent = claudeK ? 'KEY ✓' : '키없음';
+    cBadge.style.background = claudeK ? 'var(--accent-cyan)' : '#94a3b8';
+  }
+}
+
+// saveSettings 후에도 배지 갱신
+const _origSaveSettings = saveSettings;
+function saveSettings() {
+  localStorage.setItem('cre_naver_id',      document.getElementById('cfgNaverId').value);
+  localStorage.setItem('cre_naver_secret',  document.getElementById('cfgNaverSecret').value);
+  localStorage.setItem('cre_google_key',    document.getElementById('cfgGoogleKey').value);
+  localStorage.setItem('cre_google_cse',    document.getElementById('cfgGoogleCse').value);
+  localStorage.setItem('cre_claude_key',    document.getElementById('cfgClaudeKey').value);
+  localStorage.setItem('cre_claude_model',  document.getElementById('cfgClaudeModel').value);
+  hideSettingsModal();
+  updateApiStatusBadges();
+  showToast('✅ API 설정이 저장되었습니다');
+}
+
+// ================================================================
+//  AI 재분석 (Claude API 브라우저 직접 호출)
+// ================================================================
+function getClaudeKey() {
+  return localStorage.getItem('cre_claude_key') || '';
+}
+function getClaudeModel() {
+  return localStorage.getItem('cre_claude_model') || 'claude-sonnet-4-20250514';
+}
+
+async function callClaudeAPI(prompt) {
+  const apiKey = getClaudeKey();
+  if (!apiKey) {
+    showToast('⚠️ Claude API 키를 ⚙️ API 설정에서 입력해주세요');
+    return null;
+  }
+
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: getClaudeModel(),
+      max_tokens: 2000,
+      temperature: 0.3,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+
+  if (!resp.ok) {
+    const err = await resp.text();
+    throw new Error(`Claude API ${resp.status}: ${err.substring(0, 150)}`);
+  }
+
+  const data = await resp.json();
+  return data.content[0].text;
+}
+
+// 개별 뉴스 AI 재분석
+async function aiReanalyzeSingle(id) {
+  const item = state.allItems.find(i => i._id === id);
+  if (!item) return;
+
+  const btn = document.getElementById(`btnAi_${id}`);
+  btn.innerHTML = '⏳';
+  btn.disabled = true;
+
+  const catMeta = CAT_META[item.category] || CAT_META['office_lease'];
+  const catLabel = catMeta.label;
+
+  const prompt = `당신은 상업용 부동산(CRE) 전문 뉴스 큐레이터입니다.
+아래 뉴스를 분석하여 "${catLabel}" 관점에서 큐레이션해주세요.
+
+제목: ${item.title}
+내용: ${item.description || item.ai_summary || ''}
+출처: ${item.source}
+
+다음을 JSON으로 응답하세요 (JSON만, 다른 텍스트 없이):
+{
+  "relevance": "HIGH 또는 MEDIUM 또는 LOW",
+  "summary": "핵심 내용 2-3문장",
+  "comment": "CRE 전문가 시각 한줄평",
+  "reason": "이 기사가 ${catLabel} 실무자에게 중요한 이유",
+  "tags": ["태그1", "태그2"]
+}`;
+
+  try {
+    const result = await callClaudeAPI(prompt);
+    if (!result) { btn.innerHTML = '🤖'; btn.disabled = false; return; }
+
+    const jsonMatch = result.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const ai = JSON.parse(jsonMatch[0]);
+
+      // state 업데이트
+      item.ai_relevance = ai.relevance || item.ai_relevance;
+      item.ai_summary = ai.summary || item.ai_summary;
+      item.ai_comment = ai.comment || item.ai_comment;
+      item.ai_reason = ai.reason || item.ai_reason;
+      item.ai_tags = ai.tags || item.ai_tags;
+
+      // DOM 직접 업데이트 (리렌더 없이)
+      const summaryEl = document.getElementById(`aiSummary_${id}`);
+      const commentEl = document.getElementById(`aiComment_${id}`);
+      const reasonEl = document.getElementById(`aiReason_${id}`);
+      const tagEl = document.getElementById(`aiTag_${id}`);
+      const tagsEl = document.getElementById(`aiTags_${id}`);
+
+      if (summaryEl) summaryEl.textContent = ai.summary;
+      if (tagEl) tagEl.textContent = `🤖 AI 큐레이션 · 관련도 ${ai.relevance}`;
+      if (commentEl) commentEl.innerHTML = ai.comment ? `<div style="margin-top:8px; padding:8px 12px; background:linear-gradient(135deg,#fef3c7,#fef9c3); border-radius:8px; font-size:.78rem; color:#92400e;">💬 <strong>한줄평:</strong> ${ai.comment}</div>` : '';
+      if (reasonEl) reasonEl.innerHTML = ai.reason ? `💡 <strong>선정 이유:</strong> ${ai.reason}` : '';
+      if (tagsEl) tagsEl.innerHTML = (ai.tags || []).map(t => `<span style="display:inline-block; background:#eef2ff; color:#4338ca; font-size:.65rem; padding:2px 8px; border-radius:10px; font-weight:500;">${t}</span>`).join(' ');
+
+      showToast(`✅ #${item.rank} AI 재분석 완료 → ${ai.relevance}`);
+    }
+  } catch (err) {
+    showToast(`❌ AI 에러: ${err.message.substring(0, 80)}`);
+  }
+
+  btn.innerHTML = '🤖';
+  btn.disabled = false;
+}
+
+// 선택된 뉴스 일괄 AI 재분석
+async function aiReanalyzeSelected() {
+  const selectedItems = state.allItems.filter(i => state.selectedIds.has(i._id));
+  if (!selectedItems.length) { showToast('⚠️ 선택된 뉴스가 없습니다'); return; }
+
+  if (!getClaudeKey()) {
+    showToast('⚠️ Claude API 키를 ⚙️ API 설정에서 입력해주세요');
+    return;
+  }
+
+  const btn = document.getElementById('btnAiReanalyze');
+  btn.disabled = true;
+  btn.innerHTML = `⏳ AI 분석 중... (0/${selectedItems.length})`;
+  state.isAiRunning = true;
+
+  let completed = 0;
+  for (const item of selectedItems) {
+    if (!state.isAiRunning) break;
+    await aiReanalyzeSingle(item._id);
+    completed++;
+    btn.innerHTML = `⏳ AI 분석 중... (${completed}/${selectedItems.length})`;
+    // Rate limit 방지
+    if (completed < selectedItems.length) {
+      await new Promise(r => setTimeout(r, 1000));
+    }
+  }
+
+  state.isAiRunning = false;
+  btn.disabled = false;
+  updateBottomBar(); // reanalyzeCount 포함 전체 갱신
+  showToast(`✅ ${completed}건 AI 재분석 완료`);
+}
+
+// ================================================================
+//  기타 기능
+// ================================================================
+
+// ================================================================
+//  카테고리 필터링
+// ================================================================
+
+// 카테고리 탭 클릭
+function filterByCategory(catId, tabEl) {
+  state.activeCategory = catId;
+  state.currentCategory = catId;
+
+  // 탭 active 전환
+  document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+  if (tabEl) tabEl.classList.add('active');
+
+  // 사이드바 active 전환
+  document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+  // 사이드바 해당 항목 찾아서 active
+  document.querySelectorAll('.sidebar-item').forEach(i => {
+    const onclick = i.getAttribute('onclick') || '';
+    if (onclick.includes(`'${catId}'`)) i.classList.add('active');
+  });
+
+  // 뉴스 카드 필터
+  applyNewsFilter();
+}
+
+// 사이드바 클릭
+function sidebarSwitchCategory(el, catId) {
+  state.activeCategory = catId;
+  state.currentCategory = catId;
+
+  // 사이드바 active
+  document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+
+  // 탭 active 전환
+  document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+  const matchTab = document.querySelector(`.cat-tab[data-cat="${catId}"]`);
+  if (matchTab) matchTab.classList.add('active');
+
+  // 뉴스 카드 필터
+  applyNewsFilter();
+}
+
+// 실제 필터 적용
+function applyNewsFilter() {
+  const catId = state.activeCategory;
+  const cards = document.querySelectorAll('.news-item');
+  let visible = 0;
+
+  cards.forEach(card => {
+    const cardCat = card.dataset.category || 'office_lease';
+    const show = (catId === 'all') || (cardCat === catId);
+    card.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+
+  // 진행 카운트도 현재 보이는 것 기준으로 업데이트
+  updateBottomBarCount(visible);
+}
+
+// 현재 표시 중인 뉴스 개수로 bottom bar 업데이트
+function updateBottomBarCount(visibleTotal) {
+  const total = visibleTotal !== undefined ? visibleTotal : state.totalNews;
+  const visibleSelected = state.allItems.filter(i =>
+    state.selectedIds.has(i._id) &&
+    (state.activeCategory === 'all' || (i.category || 'office_lease') === state.activeCategory)
+  ).length;
+
+  const pct = total > 0 ? Math.round((visibleSelected / total) * 100) : 0;
+
+  const pi = document.getElementById('progressInfo');
+  if (pi) pi.innerHTML = `선택: <strong>${visibleSelected}</strong> / <span id="totalNewsCount">${total}</span>건`;
+  const pf = document.getElementById('progressFill');
+  if (pf) pf.style.width = pct + '%';
+
+  const reanalyze = document.getElementById('reanalyzeCount');
+  if (reanalyze) reanalyze.textContent = state.selectedIds.size;
+
+  const selectAllCb = document.getElementById('selectAllCheckbox');
+  if (selectAllCb) selectAllCb.classList.toggle('checked', state.selectedIds.size === state.totalNews && state.totalNews > 0);
+
+  const btnAi  = document.getElementById('btnAiReanalyze');
+  const btnFin = document.getElementById('btnFinalize');
+  if (btnAi)  btnAi.disabled  = state.selectedIds.size === 0;
+  if (btnFin) btnFin.disabled = state.selectedIds.size === 0;
+}
+
+// Category Tab (legacy — 이전 이벤트 리스너 대체)
+document.getElementById('categoryTabs').addEventListener('click', () => {}); // no-op (onclick 직접 처리)
+
+// Preview Panel
+function togglePreview() {
+  const overlay = document.getElementById('previewOverlay');
+  const panel = document.getElementById('previewPanel');
+  const isOpening = !panel.classList.contains('active');
+
+  overlay.classList.toggle('active');
+  panel.classList.toggle('active');
+
+  // 열 때 선택된 뉴스로 미리보기 갱신
+  if (isOpening) renderPreviewNews();
+}
+
+function renderPreviewNews() {
+  const container = document.getElementById('previewNewsList');
+  const selectedItems = state.allItems.filter(i => state.selectedIds.has(i._id));
+
+  if (!selectedItems.length) {
+    container.innerHTML = '<p style="text-align:center; color:#94a3b8; padding:24px;">선택된 뉴스가 없습니다</p>';
+    return;
+  }
+
+  // 카테고리별 그룹핑
+  const grouped = {};
+  selectedItems.forEach(item => {
+    const cat = item.category || 'office_lease';
+    if (!grouped[cat]) grouped[cat] = [];
+    grouped[cat].push(item);
+  });
+
+  // 카테고리 순서 유지
+  const catOrder = ['real_estate_market', 'office_lease', 'asset_transaction', 'corporate_space', 'industrial_asset', 'smart_esg'];
+  let html = '';
+
+  catOrder.forEach(catId => {
+    const items = grouped[catId];
+    if (!items || !items.length) return;
+    const meta = CAT_META[catId] || { icon: '📋', label: catId };
+    html += `<div class="preview-cat-section"><div class="preview-cat-label">${meta.icon} ${meta.label} · ${items.length}건 선별</div>`;
+
+    items.forEach(item => {
+      const dateStr = item.pub_date ? new Date(item.pub_date).toLocaleDateString('ko-KR') : '';
+      const relBadge = item.ai_relevance === 'HIGH'
+        ? '<span style="color:#dc2626;font-weight:700;">HIGH</span>'
+        : '<span style="color:#d97706;font-weight:700;">MEDIUM</span>';
+
+      html += `
+      <div class="preview-news-item" style="border-left:3px solid ${item.ai_relevance === 'HIGH' ? '#dc2626' : '#e2e8f0'}; padding-left:12px; margin-bottom:14px;">
+        <div class="preview-news-title" style="cursor:pointer;" onclick="window.open('${item.link}','_blank')">${item.title}</div>
+        <div class="preview-news-summary">${item.ai_summary || item.description || ''}</div>
+        ${item.ai_comment ? `<div style="font-size:11px; color:#92400e; margin-top:4px;">💬 ${item.ai_comment}</div>` : ''}
+        <div class="preview-news-source">${item.source} · ${dateStr} · ${relBadge}</div>
+      </div>`;
+    });
+
+    html += '</div>';
+  });
+
+  container.innerHTML = html;
+}
+
+// Contact Modal
+function showContactModal() { document.getElementById('contactModal').classList.add('active'); }
+function hideContactModal() { document.getElementById('contactModal').classList.remove('active'); }
+function selectRadio(el) {
+  el.parentElement.querySelectorAll('.form-radio').forEach(r => r.classList.remove('selected'));
+  el.classList.add('selected');
+}
+function submitContact() { hideContactModal(); showToast('✅ 문의가 접수되었습니다.'); }
+
+// Legacy compat
+function refreshNews() { loadNews(); }
+function aiRegenerate() { aiReanalyzeSelected(); }
+function saveDraft() { showToast('💾 임시저장 완료'); }
+function generateHTML() { generateFinalHTML(); }
+
+// ===== Toast =====
+
+// ================================================================
+//  엑셀 다운로드 헬퍼
+// ================================================================
+
+/** 텍스트 정제: 끝 말줄임 제거 + 완결 지점까지만 */
+function _xlsClean(raw) {
+  if (!raw) return '';
+  let t = String(raw).replace(/\s+/g, ' ').trim();
+
+  // 중간 말줄임(...) 처리: 말줄임 이전 완결 문장까지만 사용
+  const midEl = t.match(/^([\s\S]*?)\s*[\.…⋯]{2,}/);
+  if (midEl && midEl[1].length > 20) {
+    const before = midEl[1].trim();
+    const ENDINGS = ['됩니다.','됩니다','했다.','했다','있다.','있다','된다.','된다',
+                     '한다.','한다','됐다.','됐다','겠다.','겠다','습니다.','습니다','다.','다,'];
+    let lastPos = -1;
+    for (const e of ENDINGS) {
+      const pos = before.lastIndexOf(e);
+      if (pos > lastPos) lastPos = pos + e.length;
+    }
+    if (lastPos > 20) t = before.slice(0, lastPos).trim();
+    else t = before;
+  } else {
+    // 끝 말줄임표만 제거
+    t = t.replace(/\s*[\.…⋯]{2,}\s*$/, '').trim();
+  }
+
+  // 이미 완결 어미로 끝나면 그대로 반환
+  if (/[다요됩됐습겠음][.,!?]?\s*$/.test(t)) return t;
+
+  // 완결 어미 없으면 → 마지막 완결 지점까지 자름
+  const ENDINGS = ['됩니다.','됩니다','했다.','했다','있다.','있다','된다.','된다',
+                   '한다.','한다','됐다.','됐다','겠다.','겠다','습니다.','습니다','다.','다,'];
+  let lastPos = -1;
+  for (const e of ENDINGS) {
+    const pos = t.lastIndexOf(e);
+    if (pos > lastPos) lastPos = pos + e.length;
+  }
+  if (lastPos > 20) return t.slice(0, lastPos).trim();
+
+  return t;
+}
+
+/** 기존 요약: 웹 화면의 굵은 한줄요약(ai_short_summary) 그대로 */
+function _xlsShort(item) {
+  const s = (item.ai_short_summary || '').replace(/\\n/g, '\n').trim();
+  if (s) return s;
+  return (item.title || '').trim();
+}
+
+/** 상세 내용: 웹 화면의 ▪ 개조식 불릿(ai_summary) 그대로 */
+function _xlsDetail(item) {
+  const s = (item.ai_summary || '').replace(/\\n/g, '\n').trim();
+  if (s) return s;
+  return (item.title || '').trim();
+}
+
+
+// ================================================================
+//  엑셀 다운로드
+// ================================================================
+function exportNewsExcel() {
+  const safeTs = d => (d && typeof d === 'string' && d.length >= 10) ? d.slice(0, 19) : '';
+
+  // 오래된 기사 → 위 (오름차순)
+  const items = state.allItems
+    .filter(i => state.selectedIds.has(i._id))
+    .sort((a, b) => {
+      const ta = safeTs(a.pub_date), tb = safeTs(b.pub_date);
+      if (!ta && !tb) return 0;
+      if (!ta) return 1;
+      if (!tb) return -1;
+      return ta > tb ? 1 : ta < tb ? -1 : 0;
+    });
+
+  if (!items.length) { showToast('⚠️ 선택된 뉴스가 없습니다'); return; }
+
+  const CAT_LABEL = {
+    real_estate_market: '부동산 시장 & 정책',
+    office_lease:       '오피스 임대차',
+    asset_transaction:  '자산 매입·매각',
+    corporate_space:    '기업 공간 전략',
+    industrial_asset:   '산업용 자산',
+    smart_esg:          '스마트 빌딩 & ESG',
+  };
+
+  const headers   = ['날짜', '카테고리', '신문사', '제목', '링크', '기존 요약', '상세 내용', '한줄평'];
+  const colWidths = [14, 20, 12, 80, 8, 60, 90, 70];
+
+  const rows = items.map(item => {
+    let dateStr = '';
+    if (item.pub_date) {
+      try {
+        const d = new Date(item.pub_date);
+        dateStr = `${d.getFullYear()}. ${String(d.getMonth()+1).padStart(2,'0')}. ${String(d.getDate()).padStart(2,'0')}.`;
+      } catch(e) { dateStr = item.pub_date; }
+    }
+    return [
+      dateStr,
+      CAT_LABEL[item.category] || (item.category_name || ''),
+      item.source || '',
+      // 제목: 원문 그대로
+      item.title || '',
+      item.link || '',
+      _xlsShort(item),              // 기존 요약: 개조식 짧은 요약
+      _xlsDetail(item),             // 상세 내용: ▪ 개조식 2줄
+      (item.ai_comment || '').trim(), // 한줄평: CRE 실무자 코멘트
+    ];
+  });
+
+  // SheetJS로 워크북 생성
+  const wb = XLSX.utils.book_new();
+  const wsData = [headers, ...rows];
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+  // 컬럼 폭 설정
+  ws['!cols'] = colWidths.map(w => ({ wch: w }));
+
+  // 헤더 스타일
+  headers.forEach((_, ci) => {
+    const cellRef = XLSX.utils.encode_cell({ r: 0, c: ci });
+    if (!ws[cellRef]) return;
+    ws[cellRef].s = {
+      font:      { bold: true, color: { rgb: 'FFFFFF' } },
+      fill:      { fgColor: { rgb: '1E3A5F' } },
+      alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+      border: {
+        top:    { style: 'thin', color: { rgb: '999999' } },
+        bottom: { style: 'thin', color: { rgb: '999999' } },
+        left:   { style: 'thin', color: { rgb: '999999' } },
+        right:  { style: 'thin', color: { rgb: '999999' } },
+      }
+    };
+  });
+
+  // 데이터 행 스타일 (짝수행 연한 배경)
+  rows.forEach((_, ri) => {
+    headers.forEach((__, ci) => {
+      const cellRef = XLSX.utils.encode_cell({ r: ri + 1, c: ci });
+      if (!ws[cellRef]) ws[cellRef] = { v: '', t: 's' };
+      ws[cellRef].s = {
+        alignment: { vertical: 'top', wrapText: true },
+        fill: ri % 2 === 1 ? { fgColor: { rgb: 'F0F4F8' } } : { fgColor: { rgb: 'FFFFFF' } },
+        border: {
+          top:    { style: 'thin', color: { rgb: 'DDDDDD' } },
+          bottom: { style: 'thin', color: { rgb: 'DDDDDD' } },
+          left:   { style: 'thin', color: { rgb: 'DDDDDD' } },
+          right:  { style: 'thin', color: { rgb: 'DDDDDD' } },
+        }
+      };
+    });
+  });
+
+  XLSX.utils.book_append_sheet(wb, ws, '뉴스클리핑');
+
+  // ▼ 링크 컬럼(E열, index 4) 하이퍼링크 처리 (Bug 3 수정)
+  rows.forEach((row, ri) => {
+    const url = row[4];
+    if (!url) return;
+    const cellRef = XLSX.utils.encode_cell({ r: ri + 1, c: 4 });
+    if (!ws[cellRef]) ws[cellRef] = { v: '링크', t: 's' };
+    ws[cellRef].v = '링크';
+    ws[cellRef].t = 's';
+    ws[cellRef].l = { Target: url, Tooltip: url };
+    ws[cellRef].s = Object.assign(ws[cellRef].s || {}, {
+      font: { color: { rgb: '1E40AF' }, underline: true },
+      alignment: { horizontal: 'center', vertical: 'center' },
+    });
+  });
+
+  // 파일명: CRE_뉴스클리핑_YYYYMMDD.xlsx
+  const today = new Date();
+  const fname = `CRE_뉴스클리핑_${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}.xlsx`;
+
+  XLSX.writeFile(wb, fname, { bookType: 'xlsx', type: 'binary', cellStyles: true });
+  showToast(`✅ ${fname} 다운로드 완료 (${items.length}건)`);
+}
+
+function showToast(message) {
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.style.bottom = '24px';
+  setTimeout(() => { toast.style.bottom = '-60px'; }, 4000);
+}
+
+// ===== Initial =====
+setTimeout(() => showToast('🏢 CRE Daily Brief — 뉴스 로딩 중...'), 300);
+
+// ===== 경제지표 동적 로딩 =====
+async function loadIndicators() {
+  try {
+    const resp = await fetch('data/indicators.json');
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+    renderIndicatorCards(data.cards);
+    renderPreviewIndicators(data.cards);
+    updatePreviewDate(data);
+  } catch (err) {
+    document.getElementById('indicatorsGrid').innerHTML = `
+      <div class="indicator-card neutral" style="grid-column:1/-1; text-align:center; padding:24px;">
+        <div class="indicator-label" style="font-size:.85rem; color:var(--accent-red);">❌ 경제지표 로딩 실패</div>
+        <div class="indicator-sub">먼저 <code style="background:#f1f5f9; padding:2px 6px; border-radius:4px;">python collect.py</code> 를 실행하세요</div>
+      </div>`;
+  }
+}
+
+function renderIndicatorCards(cards) {
+  const grid = document.getElementById('indicatorsGrid');
+  grid.innerHTML = '';
+  cards.forEach(card => {
+    if (card.type === 'weather') {
+      grid.innerHTML += `
+        <div class="indicator-card weather">
+          <div class="weather-icon">${card.emoji || '☀️'}</div>
+          <div class="weather-temp">${card.tmn}℃ / ${card.tmx}℃</div>
+          <div class="weather-desc">서울 · ${card.sky} · 현재 ${card.temp}℃ · 습도 ${card.humidity}% · 강수확률 ${card.pop}%</div>
+        </div>`;
+    } else {
+      const dir = card.direction || 'neutral';
+      const arrow = dir === 'up' ? '▲' : (dir === 'down' ? '▼' : '—');
+      const changeText = card.change || '';
+      const changeDisplay = changeText ? `${arrow} ${changeText.replace('+','').replace('-','')}` : '—';
+      grid.innerHTML += `
+        <div class="indicator-card ${dir}">
+          <div class="indicator-label">${card.name}</div>
+          <div class="indicator-value">${card.value}</div>
+          <div class="indicator-change ${dir}">${dir === 'neutral' && changeText.includes('0') ? '— 동결' : changeDisplay}</div>
+          <div class="indicator-sub">${card.sub || ''}</div>
+        </div>`;
+    }
+  });
+
+  // 카드 렌더 완료 → 복사 버튼 표시
+  const copyBtn = document.getElementById('btnCopyIndicators');
+  if (copyBtn && cards.length) copyBtn.style.display = '';
+}
+
+// ── 지표 HTML 복사 ─────────────────────────────────────────────
+function copyIndicatorsHtml() {
+  const html = buildIndicatorsHtml();
+  if (!html) { showToast('⚠️ 표시된 경제지표가 없습니다'); return; }
+
+  copyToClipboard(html, '📋 경제지표 HTML 복사 완료');
+
+  const btn = document.getElementById('btnCopyIndicators');
+  if (btn) {
+    const orig = btn.textContent;
+    btn.textContent = '✓ 복사됨';
+    btn.style.background = '#dcfce7';
+    btn.style.borderColor = '#16a34a';
+    btn.style.color = '#15803d';
+    setTimeout(() => {
+      btn.textContent = orig;
+      btn.style.background = 'rgba(255,255,255,.9)';
+      btn.style.borderColor = 'rgba(124,58,237,.35)';
+      btn.style.color = '#7c3aed';
+    }, 1200);
+  }
+}
+
+function buildIndicatorsHtml() {
+  const cards = document.querySelectorAll('#indicatorsGrid .indicator-card');
+  if (!cards.length) return '';
+
+  // 카드 색상 상수
+  const colorMap = {
+    up:      { bar:'#10b981', change:'#059669', bg:'#f0fdf4', border:'#bbf7d0' },
+    down:    { bar:'#ef4444', change:'#dc2626', bg:'#fef2f2', border:'#fecaca' },
+    neutral: { bar:'#3b82f6', change:'#2563eb', bg:'#eff6ff', border:'#bfdbfe' },
+    weather: { bar:'linear-gradient(90deg,#f59e0b,#06b6d4)', bg:'#fffbeb', border:'#fde68a' },
+  };
+
+  let cardsHtml = '';
+  cards.forEach(card => {
+    const isWeather = card.classList.contains('weather');
+    const dir = isWeather ? 'weather'
+              : card.classList.contains('up')   ? 'up'
+              : card.classList.contains('down')  ? 'down'
+              : 'neutral';
+    const c = colorMap[dir];
+    const barStyle = dir === 'weather'
+      ? `background:${c.bar};`
+      : `background:${c.bar};`;
+
+    if (isWeather) {
+      const icon  = card.querySelector('.weather-icon')?.textContent  || '☀️';
+      const temp  = card.querySelector('.weather-temp')?.textContent  || '';
+      const desc  = card.querySelector('.weather-desc')?.textContent  || '';
+      cardsHtml += `<div style="background:${c.bg};border:1px solid ${c.border};border-radius:10px;padding:14px 16px;position:relative;overflow:hidden;">
+  <div style="position:absolute;top:0;left:0;width:4px;height:100%;${barStyle}border-radius:10px 0 0 10px;"></div>
+  <div style="padding-left:6px;">
+    <div style="font-size:1.6rem;line-height:1;">${icon}</div>
+    <div style="font-size:1rem;font-weight:700;color:#0f172a;margin:4px 0 2px;">${temp}</div>
+    <div style="font-size:.7rem;color:#64748b;">${desc}</div>
+  </div>
+</div>\n`;
+    } else {
+      const label  = card.querySelector('.indicator-label')?.textContent  || '';
+      const value  = card.querySelector('.indicator-value')?.textContent  || '';
+      const change = card.querySelector('.indicator-change')?.textContent || '';
+      const sub    = card.querySelector('.indicator-sub')?.textContent    || '';
+      cardsHtml += `<div style="background:${c.bg};border:1px solid ${c.border};border-radius:10px;padding:14px 16px;position:relative;overflow:hidden;">
+  <div style="position:absolute;top:0;left:0;width:4px;height:100%;background:${c.bar};border-radius:10px 0 0 10px;"></div>
+  <div style="padding-left:6px;">
+    <div style="font-size:.72rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;">${label}</div>
+    <div style="font-size:1.15rem;font-weight:800;color:#0f172a;letter-spacing:-.01em;">${value}</div>
+    <div style="font-size:.78rem;font-weight:600;color:${c.change};margin-top:2px;">${change}</div>
+    <div style="font-size:.68rem;color:#94a3b8;margin-top:3px;">${sub}</div>
+  </div>
+</div>\n`;
+    }
+  });
+
+  return `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:20px;">\n${cardsHtml}</div>`;
+}
+
+function renderPreviewIndicators(cards) {
+  const row = document.getElementById('previewIndicators');
+  if (!row) return;
+  const ecoCards = cards.filter(c => c.type !== 'weather').slice(0, 3);
+  row.innerHTML = ecoCards.map(card => {
+    const dir = card.direction || 'neutral';
+    const arrow = dir === 'up' ? '▲' : (dir === 'down' ? '▼' : '—');
+    const changeDisplay = card.change ? `${arrow} ${card.change.replace('+','').replace('-','')}` : '—';
+    return `<div class="preview-indicator-item">
+      <div class="label">${card.name}</div>
+      <div class="value">${card.value}</div>
+      <div class="change ${dir}">${changeDisplay}</div>
+    </div>`;
+  }).join('');
+}
+
+function updatePreviewDate(data) {
+  const el = document.getElementById('previewDate');
+  if (el && data.date_display) {
+    el.textContent = `${data.date_display} ${data.day_of_week || ''} · 상업용 부동산 뉴스 큐레이션`;
+  }
+}
+
+// 페이지 로드 시 실행
+async function init() {
+  await detectFlask();
+
+  // Flask 상태 UI 업데이트
+  const dot    = document.getElementById('flaskDot');
+  const status = document.getElementById('flaskStatus');
+
+  if (isFlaskMode) {
+    dot.style.background = 'var(--accent-green)';
+    dot.setAttribute('data-tooltip', 'Flask 서버 연결됨 — 버튼으로 직접 수집 가능');
+    if (status) status.textContent = 'Flask 서버 연결됨';
+    showToast('✅ Flask 서버 연결됨 — 버튼으로 직접 뉴스 수집 가능');
+  } else {
+    dot.style.background = 'var(--accent-amber)';
+    dot.setAttribute('data-tooltip', 'Flask 서버 미실행 — python app.py 실행 필요');
+    if (status) status.textContent = '터미널 모드';
+  }
+
+  updateApiStatusBadges();
+  updateSourceBadges();
+  updateKwBadge();
+  loadIndicators();
+
+  // ⛔ 자동수집 폴링 비활성화 — 수집은 수집 버튼으로 수동 실행
+  // startAutoCollectPolling();
+}
+
+// ================================================================
+//  자동 수집 진행상황 폴링 (app.py 백그라운드 수집 감시)
+// ================================================================
+function startAutoCollectPolling() {
+  let logsSeen = 0;
+  let pollTimer = null;
+  let pollActive = true;
+
+  function getOrCreatePanel() {
+    let logEl = document.getElementById('autoCollectLog');
+    if (!logEl) {
+      const container = document.getElementById('newsList');
+      if (!container) return null;
+      container.innerHTML = `
+        <div id="autoCollectPanel" style="padding:12px 0;">
+          <div id="autoCollectTitle" style="font-size:.88rem; font-weight:700; color:var(--text-secondary); margin-bottom:10px;">
+            📡 뉴스 자동 수집 중...
+          </div>
+          <div id="autoCollectLog" style="
+            background:#0f172a; color:#e2e8f0; border-radius:10px;
+            padding:16px 20px; font-family:'JetBrains Mono',monospace;
+            font-size:.73rem; line-height:1.8; max-height:420px;
+            overflow-y:auto; white-space:pre-wrap;
+          "><span style="color:#94a3b8;">🚀 수집 시작 대기 중...</span></div>
+          <div id="autoCollectActions" style="margin-top:10px; display:none; gap:8px; display:none;">
+            <button class="btn btn-sm btn-primary" onclick="loadNews(); document.getElementById('autoCollectPanel').style.display='none';">🔄 뉴스 로딩</button>
+            <button class="btn btn-sm btn-outline" onclick="location.reload();" style="margin-left:8px;">↺ 재수집</button>
+          </div>
+        </div>`;
+    }
+    return document.getElementById('autoCollectLog');
+  }
+
+  async function poll() {
+    if (!pollActive) return;
+    try {
+      const resp = await fetch(`/api/auto-collect/status?since=${logsSeen}&t=${Date.now()}`);
+      if (!resp.ok) { scheduleNext(2000); return; }
+      const data = await resp.json();
+
+      if (data.logs && data.logs.length > 0) {
+        const logEl = getOrCreatePanel();
+        if (logEl) {
+          const init = logEl.querySelector('span');
+          if (init && init.textContent.includes('대기 중')) init.remove();
+          data.logs.forEach(line => {
+            if (!line.trim()) return;
+            let color = '#e2e8f0';
+            if (line.includes('✅')) color = '#4ade80';
+            else if (line.includes('❌') || line.includes('오류')) color = '#f87171';
+            else if (line.includes('⚠️')) color = '#fbbf24';
+            else if (line.includes('🤖')) color = '#60a5fa';
+            else if (line.includes('⏳')) color = '#f59e0b';
+            else if (line.includes('📰') || line.includes('📊')) color = '#a78bfa';
+            const span = document.createElement('span');
+            span.style.color = color;
+            span.textContent = line + '\n';
+            logEl.appendChild(span);
+          });
+          logEl.scrollTop = logEl.scrollHeight;
+        }
+        logsSeen = data.total;
+      }
+
+      if (data.done) {
+        pollActive = false;
+        clearTimeout(pollTimer);
+        const titleEl = document.getElementById('autoCollectTitle');
+        const actionsEl = document.getElementById('autoCollectActions');
+        const logEl = document.getElementById('autoCollectLog');
+        if (data.success) {
+          if (titleEl) titleEl.textContent = '✅ 수집 완료';
+          if (logEl) {
+            const done = document.createElement('span');
+            done.style.cssText = 'color:#4ade80;font-weight:700;';
+            done.textContent = '\n✅ 수집 완료 — 뉴스를 로딩합니다...\n';
+            logEl.appendChild(done);
+            logEl.scrollTop = logEl.scrollHeight;
+          }
+          setTimeout(async () => {
+            await loadNews();
+            if (state.allItems.length > 0) {
+              const panel = document.getElementById('autoCollectPanel');
+              if (panel) panel.style.display = 'none';
+            } else {
+              if (titleEl) titleEl.textContent = '⚠️ 수집 완료 — 해당 기간 뉴스 없음';
+              if (actionsEl) { actionsEl.style.display = 'flex'; }
+            }
+          }, 800);
+        } else {
+          if (titleEl) titleEl.textContent = '❌ 수집 실패 — 로그를 확인하세요';
+          if (actionsEl) { actionsEl.style.display = 'flex'; }
+        }
+        return;
+      }
+      scheduleNext(data.running ? 1500 : 800);
+    } catch (e) {
+      scheduleNext(2000);
+    }
+  }
+
+  function scheduleNext(ms = 1500) {
+    if (pollActive) pollTimer = setTimeout(poll, ms);
+  }
+
+  scheduleNext(500);
+}
+init();
+</script>
