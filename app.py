@@ -277,11 +277,15 @@ def collect_news():
     date_to   = body.get('date_to',   '')
     days      = body.get('days', 3)
 
+    category = body.get('category', '')
+
     cmd = [sys.executable, script]
     if date_from and date_to:
         cmd += ['--from-date', date_from, '--to-date', date_to]
     else:
         cmd += ['--days', str(days)]
+    if category:
+        cmd += ['--category', category]
 
     return Response(
         stream_with_context(run_script_stream('news', cmd)),

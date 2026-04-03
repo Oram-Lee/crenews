@@ -2298,6 +2298,8 @@ def main():
                         help="시작일 YYYY-MM-DD")
     parser.add_argument("--to-date",    dest="date_to",
                         help="종료일 YYYY-MM-DD")
+    parser.add_argument("--category",   dest="category", default=None,
+                        help="테스트용: 단일 카테고리 ID (예: office_lease)")
     args = parser.parse_args()
 
     # 날짜 범위 결정
@@ -2369,7 +2371,8 @@ def main():
     all_categories_output = []
     total_count = 0
 
-    for category in ALL_CATEGORIES:
+    target_categories = [c for c in ALL_CATEGORIES if c["id"] == args.category] if args.category else ALL_CATEGORIES
+    for category in target_categories:
         cat_news = collect_category(config, category, date_from, date_to)
         all_categories_output.append({
             "id":    category["id"],

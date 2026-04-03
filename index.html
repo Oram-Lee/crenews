@@ -1395,6 +1395,17 @@ body {
           📂 JSON 불러오기
         </button>
         <input type="file" id="jsonFileInput" accept=".json" style="display:none;" onchange="loadNewsFromFile(this)">
+        <select id="testCategory" class="form-input" style="height:32px; font-size:.75rem; padding:2px 6px; border-radius:6px;">
+          <option value="real_estate_market">부동산 시장 & 정책</option>
+          <option value="office_lease">오피스 임대차</option>
+          <option value="asset_transaction">자산 매입·매각</option>
+          <option value="corporate_space">기업 공간 전략</option>
+          <option value="industrial_asset">산업용 자산</option>
+          <option value="smart_esg">스마트 빌딩 & ESG</option>
+        </select>
+        <button class="btn btn-sm btn-outline" id="btnTestCollect" onclick="collectNewsTest()" style="min-width:110px; border-color:#f59e0b; color:#b45309;">
+          🧪 테스트 수집
+        </button>
         <button class="btn btn-sm btn-primary" id="btnCollect" onclick="collectNews()" style="min-width:140px;">
           🔍 뉴스 수집 시작
         </button>
@@ -2067,6 +2078,25 @@ function collectNews() {
 
     showToast('📋 명령어 클립보드 복사됨 → 터미널에 붙여넣기');
     setTimeout(() => { btn.disabled = false; btn.innerHTML = '🔍 뉴스 수집 시작'; }, 3000);
+  }
+}
+
+// ================================================================
+//  테스트 수집 (단일 카테고리)
+// ================================================================
+function collectNewsTest() {
+  const dateFrom = document.getElementById('dateFrom').value;
+  const dateTo   = document.getElementById('dateTo').value;
+  if (!dateFrom || !dateTo) { showToast('⚠️ 기간을 선택해주세요'); return; }
+
+  const category = document.getElementById('testCategory').value;
+  const label    = document.getElementById('testCategory').selectedOptions[0].text;
+
+  if (isFlaskMode) {
+    showToast(`🧪 테스트 수집: ${label}`);
+    runCollectStream('/api/collect/news', { date_from: dateFrom, date_to: dateTo, category }, 'news');
+  } else {
+    showToast('⚠️ Flask 서버 필요');
   }
 }
 
@@ -4461,17 +4491,63 @@ function _xlsClean(raw) {
 }
 
 /** 기존 요약: 웹 화면의 굵은 한줄요약(ai_short_summary) 그대로 */
+function _resolveSource(item) {
+  if (item.source && item.source !== '네이버뉴스') return item.source;
+  const OID_MAP = {
+    '001':'연합뉴스','003':'뉴시스','005':'국민일보','006':'경향신문',
+    '008':'머니투데이','009':'중앙일보','011':'서울경제','013':'헤럴드경제',
+    '014':'파이낸셜뉴스','015':'한국경제','018':'이데일리','020':'동아일보',
+    '021':'문화일보','022':'세계일보','023':'조선일보','024':'한국일보',
+    '028':'한겨레','029':'디지털타임스','033':'한겨레','034':'조선일보',
+    '037':'조선비즈','047':'오마이뉴스','055':'SBS','056':'KBS',
+    '057':'MBC','058':'YTN','079':'서울신문','082':'머니투데이',
+    '092':'머니투데이','093':'헤럴드경제','096':'파이낸셜뉴스','098':'뉴시스',
+    '119':'아이뉴스24','138':'이데일리','214':'한국경제TV','215':'한국경제',
+    '243':'이코노미스트','277':'아시아경제','311':'아시아경제','366':'조선비즈',
+    '421':'뉴스핌','422':'뉴스핌','469':'한국일보','584':'서울경제',
+  };
+  const DOMAIN_MAP = {
+    'hankyung.com':'한국경제','mk.co.kr':'매일경제','sedaily.com':'서울경제',
+    'edaily.co.kr':'이데일리','mt.co.kr':'머니투데이','newsis.com':'뉴시스',
+    'newspim.com':'뉴스핌','thebell.co.kr':'더벨','etnews.com':'전자신문',
+    'chosun.com':'조선일보','donga.com':'동아일보','joongang.co.kr':'중앙일보',
+    'hani.co.kr':'한겨레','khan.co.kr':'경향신문','yna.co.kr':'연합뉴스',
+    'heraldcorp.com':'헤럴드경제','asiae.co.kr':'아시아경제','fnnews.com':'파이낸셜뉴스',
+    'inews24.com':'아이뉴스24','ajunews.com':'아주경제','dailian.co.kr':'데일리안',
+    'ohmynews.com':'오마이뉴스','bizwatch.co.kr':'비즈워치','etoday.co.kr':'이투데이',
+    'zdnet.co.kr':'ZDNet',
+  };
+  // OID 추출 (네이버 링크 or naver_link)
+  for (const url of [item.naver_link || '', item.link || '']) {
+    if (!url) continue;
+    let m = url.match(/\/article\/(\d{3})\//);
+    if (!m) m = url.match(/[?&]oid=(\d{3})(?:&|$)/);
+    if (m && OID_MAP[m[1]]) return OID_MAP[m[1]];
+  }
+  // 도메인 매칭
+  for (const url of [item.link || '', item.naver_link || '']) {
+    if (!url || url.includes('naver.com')) continue;
+    try {
+      const host = new URL(url).hostname.replace(/^www\./, '');
+      for (const [domain, name] of Object.entries(DOMAIN_MAP)) {
+        if (host === domain || host.endsWith('.' + domain)) return name;
+      }
+    } catch(e) {}
+  }
+  return item.source || '네이버뉴스';
+}
+
 function _xlsShort(item) {
   const s = (item.ai_short_summary || '').replace(/\\n/g, '\n').trim();
-  if (s) return s;
-  return (item.title || '').trim();
+  const out = s || (item.title || '').trim();
+  return out.replace(/\s*[.…⋯]+\s*$/, '').trim();
 }
 
 /** 상세 내용: 웹 화면의 ▪ 개조식 불릿(ai_summary) 그대로 */
 function _xlsDetail(item) {
   const s = (item.ai_summary || '').replace(/\\n/g, '\n').trim();
-  if (s) return s;
-  return (item.title || '').trim();
+  const out = s || (item.title || '').trim();
+  return out.replace(/\s*[.…⋯]+\s*$/, '').trim();
 }
 
 
@@ -4517,9 +4593,9 @@ function exportNewsExcel() {
     return [
       dateStr,
       CAT_LABEL[item.category] || (item.category_name || ''),
-      item.source || '',
+      _resolveSource(item),
       // 제목: 대괄호 출처 + 말줄임표 제거
-      (item.title || '').replace(/^(\s*\[[^\]]{1,40}\]\s*)+/, '').replace(/\s*[\.…⋯]+\s*$/, '').trim(),
+      (item.title || '').replace(/^(\s*\[[^\]]{1,40}\]\s*)+/, '').replace(/\s*[.…⋯]+\s*$/, '').trim(),
       item.link || '',
       _xlsShort(item),              // 기존 요약: 개조식 짧은 요약
       _xlsDetail(item),             // 상세 내용: ▪ 개조식 2줄
