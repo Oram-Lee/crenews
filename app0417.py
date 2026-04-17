@@ -1,11 +1,3 @@
-# ─────────────────────────────────────────────
-#  ⚠️ gevent monkey patch — 반드시 최상단, 어떤 import보다 먼저
-#  SSE(장시간 열린 커넥션) + subprocess I/O를 gunicorn에서 안정적으로
-#  돌리기 위한 필수 조치. 삭제/이동 금지.
-# ─────────────────────────────────────────────
-from gevent import monkey
-monkey.patch_all()
-
 #!/usr/bin/env python3
 """
 CRE Daily Brief — Flask 미니 서버
@@ -14,12 +6,8 @@ CRE Daily Brief — Flask 미니 서버
       실시간 로그를 SSE(Server-Sent Events)로 스트리밍
 
 실행:
-  [로컬 개발]  python app.py
-  [프로덕션]   gunicorn app:app --worker-class gevent --workers 1 \
-                        --timeout 300 --bind 0.0.0.0:$PORT \
-                        --access-logfile - --error-logfile -
-
-  → http://localhost:8000  (로컬)
+  python app.py
+  → http://localhost:8000
 
 엔드포인트:
   GET  /                          index.html 서빙
@@ -59,9 +47,6 @@ def _clear_pycache():
         print(f"  🧹 __pycache__ {count}개 삭제 완료")
 
 _clear_pycache()
-
-# gunicorn 환경에서도 .pyc 생성 방지
-os.environ['PYTHONDONTWRITEBYTECODE'] = '1'
 
 
 # ─────────────────────────────────────────────
@@ -166,7 +151,7 @@ def status():
         return None
 
     return jsonify({
-        'server':          'CRE Daily Brief Flask (gunicorn+gevent)',
+        'server':          'CRE Daily Brief Flask',
         'indicators_json': {'exists': indicators_ok, 'updated': mtime('indicators.json')},
         'news_json':        {'exists': news_ok,       'updated': mtime('news.json')},
         'running_jobs':     list(running_jobs.keys()),
@@ -197,9 +182,6 @@ def run_script_stream(job_id: str, cmd: list):
     """
     subprocess로 스크립트 실행 → 한 줄씩 SSE data: 이벤트로 전송
     완료/오류 시 done / error 이벤트 발송
-
-    gevent monkey patch 덕분에 stdout 읽기 블로킹이
-    다른 워커 그린렛을 막지 않음
     """
     with lock:
         if job_id in running_jobs:
@@ -276,11 +258,7 @@ def collect_indicators():
     return Response(
         stream_with_context(run_script_stream('indicators', [sys.executable, script])),
         mimetype='text/event-stream',
-        headers={
-            'Cache-Control': 'no-cache',
-            'X-Accel-Buffering': 'no',       # Render/nginx 프록시 버퍼링 끄기 (SSE 필수)
-            'Connection': 'keep-alive',
-        },
+        headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no'},
     )
 
 
@@ -312,11 +290,7 @@ def collect_news():
     return Response(
         stream_with_context(run_script_stream('news', cmd)),
         mimetype='text/event-stream',
-        headers={
-            'Cache-Control': 'no-cache',
-            'X-Accel-Buffering': 'no',       # Render/nginx 프록시 버퍼링 끄기 (SSE 필수)
-            'Connection': 'keep-alive',
-        },
+        headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no'},
     )
 
 
@@ -371,23 +345,16 @@ def _auto_collect_news():
 
 
 if __name__ == '__main__':
-    # ⚠️ 이 블록은 **로컬 개발 전용** 입니다.
-    # 프로덕션(Render)은 gunicorn이 app:app 객체를 직접 import 하므로
-    # 이 블록은 실행되지 않습니다.
-    #
-    # Render Start Command:
-    #   gunicorn app:app --worker-class gevent --workers 1 \
-    #            --timeout 300 --bind 0.0.0.0:$PORT \
-    #            --access-logfile - --error-logfile -
-
     print("=" * 55)
-    print("  🏢 CRE Daily Brief — Flask 로컬 개발 서버")
+    print("  🏢 CRE Daily Brief — Flask 미니 서버")
     print("=" * 55)
     print(f"  📂 작업 디렉토리: {BASE_DIR}")
     print(f"  🌐 접속 주소:     http://localhost:8000")
-    print("  ⚠️  프로덕션 배포는 gunicorn 사용 (상단 주석 참조)")
     print("  Ctrl+C 로 종료")
     print("=" * 55)
+
+    # PYTHONDONTWRITEBYTECODE=1 — 이 프로세스도 .pyc 생성 안 함
+    os.environ['PYTHONDONTWRITEBYTECODE'] = '1'
 
     # ⛔ 자동 수집 비활성화 — 수집은 브라우저 버튼으로 수동 실행
     # t = threading.Thread(target=_auto_collect_news, daemon=True)
