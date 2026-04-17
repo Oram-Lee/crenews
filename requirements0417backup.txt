@@ -3,3 +3,5 @@ requests
 anthropic
 google-generativeai
 urllib3
+gunicorn
+gevent
