@@ -2107,10 +2107,7 @@ function collectNewsTest() {
 }
 
 // ================================================================
-//  수집 시작 + 폴링 (백그라운드 방식)
-//  ⭐ 이전: SSE 스트리밍 → Render 900초 타임아웃에 걸려 502 발생
-//  ⭐ 현재: POST 즉시 202 응답 → /api/job/status 폴링 (1.5초 간격)
-//          HTTP 요청 시간과 무관하게 백그라운드 스레드에서 작업 진행
+//  SSE 스트리밍 공통 함수
 // ================================================================
 function runCollectStream(endpoint, body, jobType) {
   const btn = document.getElementById('btnCollect');
@@ -2124,7 +2121,7 @@ function runCollectStream(endpoint, body, jobType) {
       font-size:.75rem; line-height:1.8; max-height:420px;
       overflow-y:auto; margin-bottom:12px; white-space:pre-wrap;
     ">
-      <span style="color:#94a3b8;">🚀 수집 시작 요청 중...</span>\n
+      <span style="color:#94a3b8;">🚀 수집 시작...</span>\n
     </div>
     <div style="text-align:center;">
       <button class="btn btn-sm btn-danger" onclick="stopCollect()" id="btnStop">⏹ 중단</button>
@@ -2142,130 +2139,89 @@ function runCollectStream(endpoint, body, jobType) {
 
   if (btn) { btn.disabled = true; btn.innerHTML = '⏳ 수집 중...'; }
 
-  // ──────────────────────────────────────────────
-  // Step 1: POST로 백그라운드 수집 시작 요청 (즉시 응답)
-  // ──────────────────────────────────────────────
+  // SSE 연결 (EventSource는 GET만 지원 → fetch + ReadableStream 사용)
+  let controller;
+  window._collectController = controller = new AbortController();
+
   fetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
-  }).then(async resp => {
-    if (resp.status === 409) {
-      // 이미 실행 중 — 폴링은 그대로 시작 (기존 작업 진행상황 표시)
-      showToast('⚠️ 이미 수집이 진행 중입니다 — 진행상황을 표시합니다');
-    } else if (resp.status !== 202 && resp.status !== 200) {
-      const errData = await resp.json().catch(() => ({}));
-      throw new Error(errData.error || `서버 응답 ${resp.status}`);
-    }
+    signal: controller.signal
+  }).then(resp => {
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
 
-    // ──────────────────────────────────────────────
-    // Step 2: 폴링 시작
-    // ──────────────────────────────────────────────
-    let logsSeen = 0;
-    let pollTimer = null;
-    window._collectPolling = { active: true, jobType };
+    const logBox = document.getElementById(logContainerId);
 
-    async function poll() {
-      if (!window._collectPolling.active) return;
-
-      try {
-        const sr = await fetch(`/api/job/status?job=${jobType}&since=${logsSeen}&t=${Date.now()}`);
-        if (!sr.ok) {
-          pollTimer = setTimeout(poll, 2000);
+    function read() {
+      reader.read().then(({ done, value }) => {
+        if (done) {
+          onCollectComplete(jobType);
           return;
         }
-        const data = await sr.json();
 
-        // 새 로그 추가
-        const logBox = document.getElementById(logContainerId);
-        if (data.logs && data.logs.length > 0 && logBox) {
-          // 첫 로그 도착 시 "시작 요청 중..." placeholder 제거
-          const init = logBox.querySelector('span');
-          if (init && init.textContent.includes('시작 요청 중')) init.remove();
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop(); // 미완성 줄은 버퍼에 유지
 
-          data.logs.forEach(msg => {
-            if (msg === undefined || msg === null) return;
-            const span = document.createElement('span');
+        lines.forEach(line => {
+          if (line.startsWith('data: ')) {
+            const msg = line.slice(6);
+            if (logBox) {
+              const span = document.createElement('span');
 
-            // 로그 색상 처리 (기존과 동일)
-            if (msg.includes('✅') || msg.includes('완료')) {
-              span.style.color = '#4ade80';
-            } else if (msg.includes('❌') || msg.includes('에러') || msg.includes('ERROR') || msg.includes('실패')) {
-              span.style.color = '#f87171';
-            } else if (msg.includes('⚠️')) {
-              span.style.color = '#fbbf24';
-            } else if (msg.includes('🤖')) {
-              span.style.color = '#60a5fa';
-            } else if (msg.includes('⏳')) {
-              span.style.color = '#f59e0b';
-            } else if (msg.includes('📰') || msg.includes('📊')) {
-              span.style.color = '#a78bfa';
-            } else if (msg.startsWith('  ')) {
-              span.style.color = '#94a3b8';
-            } else if (msg.includes('=====') || msg.includes('단계')) {
-              span.style.color = '#60a5fa';
-            } else {
-              span.style.color = '#e2e8f0';
+              // 로그 색상 처리
+              if (msg.includes('✅') || msg.includes('완료')) {
+                span.style.color = '#4ade80';
+              } else if (msg.includes('❌') || msg.includes('에러') || msg.includes('ERROR')) {
+                span.style.color = '#f87171';
+              } else if (msg.includes('⚠️')) {
+                span.style.color = '#fbbf24';
+              } else if (msg.startsWith('  ')) {
+                span.style.color = '#94a3b8';
+              } else if (msg.includes('=====') || msg.includes('단계')) {
+                span.style.color = '#60a5fa';
+              } else {
+                span.style.color = '#e2e8f0';
+              }
+
+              span.textContent = msg + '\n';
+              logBox.appendChild(span);
+              logBox.scrollTop = logBox.scrollHeight; // 자동 스크롤
             }
-
-            span.textContent = msg + '\n';
-            logBox.appendChild(span);
-          });
-          logBox.scrollTop = logBox.scrollHeight;
-          logsSeen = data.total;
-        }
-
-        // 작업 종료 체크
-        if (data.done) {
-          window._collectPolling.active = false;
-          if (data.success) {
+          } else if (line.startsWith('event: done')) {
             onCollectComplete(jobType);
-          } else {
+          } else if (line.startsWith('event: error')) {
             if (btn) { btn.disabled = false; btn.innerHTML = '🔍 뉴스 수집 시작'; }
-            showToast('❌ 수집 실패 — 로그를 확인하세요');
+            showToast('❌ 수집 중 오류가 발생했습니다');
           }
-          return;
+        });
+
+        read(); // 재귀 읽기
+      }).catch(err => {
+        if (err.name !== 'AbortError') {
+          console.error('SSE read error:', err);
         }
-
-        // 다음 폴링 (실행 중: 1.5초, 대기 중: 0.8초)
-        pollTimer = setTimeout(poll, data.running ? 1500 : 800);
-      } catch (e) {
-        console.error('Poll error:', e);
-        pollTimer = setTimeout(poll, 2000);
-      }
+      });
     }
-
-    // 첫 폴링은 0.5초 후 시작 (백엔드 스레드 부팅 시간 확보)
-    pollTimer = setTimeout(poll, 500);
-
+    read();
   }).catch(err => {
-    console.error('Collect start error:', err);
-    showToast('❌ 수집 시작 실패: ' + (err.message || '서버 연결 오류'));
-    if (btn) { btn.disabled = false; btn.innerHTML = '🔍 뉴스 수집 시작'; }
+    if (err.name !== 'AbortError') {
+      showToast('❌ Flask 서버 연결 실패 — python app.py 실행 여부 확인');
+      if (btn) { btn.disabled = false; btn.innerHTML = '🔍 뉴스 수집 시작'; }
+    }
   });
 }
 
-// ================================================================
-//  수집 중단 (서버 백그라운드 스레드 SIGTERM + 클라이언트 폴링 정지)
-// ================================================================
 function stopCollect() {
-  const jobType = (window._collectPolling && window._collectPolling.jobType) || 'news';
-
-  // 클라이언트 폴링 정지
-  if (window._collectPolling) {
-    window._collectPolling.active = false;
+  if (window._collectController) {
+    window._collectController.abort();
+    showToast('⏹ 수집이 중단되었습니다');
+    const btn = document.getElementById('btnCollect');
+    if (btn) { btn.disabled = false; btn.innerHTML = '🔍 뉴스 수집 시작'; }
   }
-
-  // 서버 백그라운드 작업 중단 요청
-  fetch('/api/job/stop', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ job: jobType }),
-  }).catch(() => {});
-
-  showToast('⏹ 수집 중단 요청됨');
-  const btn = document.getElementById('btnCollect');
-  if (btn) { btn.disabled = false; btn.innerHTML = '🔍 뉴스 수집 시작'; }
 }
 
 function onCollectComplete(jobType) {
