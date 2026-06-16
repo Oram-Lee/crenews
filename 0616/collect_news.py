@@ -423,11 +423,6 @@ ALL_CATEGORIES = [
 # _source_from_naver_item / fetch_google_rss 가 내장 매핑과 함께 참조한다.
 EXTRA_SOURCE_DOMAINS: Dict[str, str] = {}
 
-# 사용자 편집 프롬프트 지침 (app.py 런타임 오버라이드로 주입).
-#   _build_combined_prompt 이 '고정 구조' 사이에 끼워넣는다 (구조 자체는 불변).
-EXTRA_PROMPT_GLOBAL: str = ""                  # 모든 카테고리 공통 지침
-EXTRA_PROMPT_CATEGORIES: Dict[str, str] = {}   # {cat_id: 카테고리별 지침}
-
 
 # ================================================================
 #  유틸리티
@@ -1335,12 +1330,6 @@ DEFAULT_AUTHORITY = 30           # 미매핑 매체 (제목 대괄호 추출 등
 PORTAL_FALLBACK_AUTHORITY = 20   # 포털 폴백 (실제 매체 식별 실패)
 _PORTAL_FALLBACK_SOURCES = {"Google News", "Google뉴스", "네이버뉴스", ""}
 
-# 큐레이션 선정 우선순위에 더할 공신력 가중치.
-#   정렬 키 = relevance_score(정수, 보통 0~5) + 공신력(0~100) × 이 값.
-#   0.01 → 최대 가산 +1.0 (관련도 1점 상당) → 사실상 '동점·근소차 깨기'.
-#   0 으로 두면 공신력은 정렬에 영향 없음(중복 보존에만 사용). 키울수록 영향 ↑.
-AUTHORITY_RANK_WEIGHT = 0.01
-
 
 def _source_authority(source: str) -> int:
     """매체 공신력 점수 반환 (미상은 기본값, 포털 폴백은 최하)."""
@@ -1353,41 +1342,16 @@ def _source_authority(source: str) -> int:
 
 
 def _clamp_insight(text: str, max_len: int = 30) -> str:
-    """한줄 텍스트(한줄요약·한줄평)를 공백 포함 max_len자 이내로 정리.
-
-    프롬프트가 처음부터 짧고 완결되게 쓰도록 유도하지만, AI가 길게 쓴 경우의
-    백업 장치. 단어 경계에서 자른 뒤 끝에 '매달린 조사·연결어미'를 제거해
-    '리스크에 / 전환 없이'처럼 미완결로 잘린 느낌을 최대한 줄인다.
-    """
+    """인사이트 한줄(한줄평)을 공백 포함 max_len자 이내로 강제 (AI 미준수 대비)."""
     s = re.sub(r'\s+', ' ', (text or '')).strip()
-    s = s.strip('"\'\u201c\u201d').lstrip('▪•-* ').strip()   # 따옴표·불릿 제거
-
-    if len(s) > max_len:
-        cut = s[:max_len]
-        sp  = cut.rfind(' ')
-        s   = (cut[:sp] if sp >= max_len - 10 else cut).rstrip(' ,·-')
-
-    # ① 끝에 매달린 다중자 연결어미 제거 (항상 안전 — '및·등'은 단어 오인 위험으로 제외)
-    _tail_multi = re.compile(
-        r'(없이|위해|위한|통해|통한|대해|대한|관련|관한|따라|로써|로서|부터|까지|'
-        r'보다|만큼|처럼|같이|에서|에게|한테|라며|면서|라고|라는|다는|또는)$'
-    )
-    prev = None
-    while s and s != prev:
-        prev = s
-        s = _tail_multi.sub('', s).rstrip(' ,·-')
-
-    # ② 마지막 단어의 단일 조사 제거 → '리스크에 → 리스크'.
-    #    어간 2자 이상일 때만(주의·정의 보호), '로'는 제외(고속도로·경로 보호).
-    if s:
-        head, _, last = s.rpartition(' ')
-        m = re.match(r'^(.{2,})([은는이가을를에의도와과])$', last)
-        if m:
-            last = m.group(1)
-            s = (head + ' ' + last).strip() if head else last
-            s = s.rstrip(' ,·-')
-
-    return s
+    s = s.strip('"\'\u201c\u201d').lstrip('▪•- ').strip()  # 따옴표·불릿 제거
+    if len(s) <= max_len:
+        return s
+    cut = s[:max_len]
+    sp = cut.rfind(' ')          # 끝부분에 공백 있으면 단어 보존하며 절단
+    if sp >= max_len - 8:
+        cut = cut[:sp]
+    return cut.rstrip(' ,·-')
 
 
 def apply_runtime_overrides(path: Optional[str]) -> None:
@@ -1433,20 +1397,6 @@ def apply_runtime_overrides(path: Optional[str]) -> None:
             applied_sd += 1
     if applied_sd:
         print(f"  🌐 사이트 도메인 매핑 등록: {applied_sd}개")
-
-    # ── 0.5) 프롬프트 지침 (공통 + 카테고리별) ───────────────────
-    global EXTRA_PROMPT_GLOBAL
-    pg = ov.get("prompt_global")
-    if isinstance(pg, str):
-        EXTRA_PROMPT_GLOBAL = pg.strip()
-    pc = ov.get("prompt_categories")
-    if isinstance(pc, dict):
-        for k, v in pc.items():
-            if isinstance(v, str):
-                EXTRA_PROMPT_CATEGORIES[str(k)] = v.strip()
-    _n_cat = sum(1 for v in EXTRA_PROMPT_CATEGORIES.values() if v)
-    if EXTRA_PROMPT_GLOBAL or _n_cat:
-        print(f"  ✍️ 프롬프트 지침 적용: 공통 {'O' if EXTRA_PROMPT_GLOBAL else 'X'}, 카테고리 {_n_cat}개")
 
     # ── 1) 매체 공신력 병합 ──────────────────────────────────────
     sa = ov.get("source_authority") or {}
@@ -1542,14 +1492,8 @@ def filter_and_dedupe(items: List[Dict], category: Dict,
                   f"{item.get('source','?')} | {item['title'][:32]}")
             unique[dup] = item
 
-    # AI 큐레이션 배치 정렬: 관련도(주) + 공신력 미세 가산(부).
-    #   상위 35건만 AI에 투입(ai_curate)되므로, 동점·근소차일 때
-    #   공신력 높은 매체가 '선정'에서 앞선다. (최대 가산 = 100 × AUTHORITY_RANK_WEIGHT)
-    unique.sort(
-        key=lambda x: x.get("relevance_score", 0)
-                      + _source_authority(x.get("source", "")) * AUTHORITY_RANK_WEIGHT,
-        reverse=True
-    )
+    # AI 큐레이션 배치는 관련도 순서 유지 (공신력은 '보존 매체' 결정에만 사용)
+    unique.sort(key=lambda x: x.get("relevance_score", 0), reverse=True)
     return unique
 
 
@@ -1724,7 +1668,7 @@ def _build_summary_prompt(items: List[Dict], category: Dict) -> str:
 1. summary: "▪ " 로 시작하는 개조식 줄. 최대 2줄. 각 줄 40자 이하.
    - 줄1: 핵심사실 (주체+행위+수치)
    - 줄2: 줄1과 다른 정보 (위치·배경·전망). 없으면 1줄만.
-2. short_summary: summary 핵심을 1줄로. 30자 이하.
+2. short_summary: summary 핵심을 1줄로. 40자 이하.
 3. 모든 줄은 완결어미로 끝낼 것: ~했다 / ~됐다 / ~예정 / ~체결 / ~선정 / ~전망 / ~확대
 4. 조사(을·를·이·가·의·에서·통해·위해·등·및)로 끝나는 줄 출력 금지.
 5. 원문 문장 그대로 복사 금지. 반드시 새로 압축해 쓸 것.
@@ -2077,16 +2021,10 @@ def _build_combined_prompt(batch: List[Dict], cat_name: str, category: Dict) -> 
         for i, item in enumerate(batch)
     )
 
-    # 사용자 편집 지침 주입 블록 (있을 때만) — 구조는 그대로, 지침만 끼움
-    _cat_extra = EXTRA_PROMPT_CATEGORIES.get(cat_id, "").strip()
-    cat_extra_block = f"\n\n【이 카테고리 추가 지침 — 반드시 반영】\n{_cat_extra}" if _cat_extra else ""
-    _global_extra = (EXTRA_PROMPT_GLOBAL or "").strip()
-    global_extra_block = f"\n\n【공통 추가 지침 — 선별·요약 모두 적용】\n{_global_extra}" if _global_extra else ""
-
     return f"""한국 CRE 뉴스 에디터입니다. 아래 {len(batch)}건에서 [{cat_name}] 카테고리 기사를 선별하고, 선별된 기사만 개조식으로 요약하세요.
 
 【카테고리 정의】
-{cat_definition}{cat_extra_block}
+{cat_definition}
 
 {news_text}
 
@@ -2101,16 +2039,16 @@ def _build_combined_prompt(batch: List[Dict], cat_name: str, category: Dict) -> 
 1. summary: "▪ "로 시작하는 개조식 줄. 최대 2줄. 각 줄 40자 이하.
    - 줄1: 핵심사실 (주체+행위+수치)
    - 줄2: 줄1과 다른 정보 (위치·배경·전망). 없으면 1줄만.
-2. short_summary: 기사 핵심을 1줄로. 공백 포함 30자 이내의 완결된 한 줄. 길게 쓰고 자르지 말고 처음부터 30자 안에 끝낼 것.
-3. comment(인사이트 한줄): 공백 포함 30자 이내의 완결된 한 줄. CRE 임대차·투자 실무자 관점의 함의(예측·리스크·기회 중 하나). 명사 또는 아주 짧은 서술어로 마무리(예: ~확대 / ~우위 / ~시급 / ~노출 / ~전환). 30자를 절대 넘기지 말 것. 사실 단순 반복 금지.
-4. 모든 줄(특히 short_summary·comment)은 조사·연결어미(은·는·이·가·을·를·에·의·로·없이·위해·통해·등·및)로 끝내지 말 것. 명사 또는 완결어미(~했다·됐다·예정·전망·확대 등)로 끝낼 것.
-5. 원문 문장 그대로 복사 금지.{global_extra_block}
+2. short_summary: summary 핵심을 1줄로. 40자 이하.
+3. comment(인사이트 한줄): 공백 포함 30자 이내. CRE 임대차·투자 실무자 시각의 핵심 함의 한 줄(예측·리스크·기회 중 하나). 사실 단순 반복 금지, 완결형으로 끝낼 것.
+4. 완결어미 필수: ~했다 / ~됐다 / ~예정 / ~체결 / ~선정 / ~전망 / ~확대
+5. 조사(을·를·이·가·의·에서·통해·위해·등·및)로 끝나는 줄 출력 금지.
+6. 원문 문장 그대로 복사 금지.
 
 【예시】
 기사: "DL이앤씨가 코리안리 신사옥 4000억 공사 우선협상자로 선정됐다. 종로 수송동에 21층 규모로 2026년 착공 예정."
   summary: "▪ DL이앤씨, 코리안리 신사옥 4,000억 우선협상자 선정\\n▪ 종로 수송동 21층, 2026년 5월 착공 예정"
   short_summary: "DL이앤씨, 코리안리 신사옥 4,000억 공사 수주"
-  comment: "수송동 오피스 신규 공급 신호"
 
 ━━━━━━━━━━━━━━━━━━━━
 출력 — 선별된 기사만 JSON 배열 (코드블록 없이):
@@ -2119,8 +2057,8 @@ def _build_combined_prompt(batch: List[Dict], cat_name: str, category: Dict) -> 
     "index": <기사번호 정수>,
     "relevance": "HIGH",
     "summary": "▪ 줄1\\n▪ 줄2",
-    "short_summary": "완결된 한 줄·30자 이내",
-    "comment": "<완결된 인사이트·30자 이내·조사로 끝내지 말 것>",
+    "short_summary": "한줄요약",
+    "comment": "<인사이트 한줄·공백포함 30자 이내>",
     "tags": ["태그1", "태그2"]
   }}
 ]
@@ -2158,7 +2096,7 @@ def _apply_combined_results(batch: List[Dict], results: List[Dict],
         if not raw_short or len(raw_short) < 5:
             first_line = re.split(r'\n', item["ai_summary"])[0]
             raw_short  = re.sub(r'^▪\s*', '', first_line).strip()
-        item["ai_short_summary"] = _clamp_insight(raw_short, 30)
+        item["ai_short_summary"] = raw_short
 
         selected.append(item)
     return selected

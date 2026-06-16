@@ -366,8 +366,6 @@ def collect_news():
         'keywords':         body.get('keywords') or {},
         'source_authority': body.get('source_authority') or {},
         'source_domains':   body.get('source_domains') or {},
-        'prompt_global':     body.get('prompt_global') or '',
-        'prompt_categories': body.get('prompt_categories') or {},
     }
     ov_path = os.path.join(BASE_DIR, 'data', 'run_overrides.json')
     try:
