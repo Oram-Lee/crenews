@@ -419,10 +419,6 @@ ALL_CATEGORIES = [
     SMART_ESG_CATEGORY,
 ]
 
-# 사용자 등록 사이트 도메인 → 매체명 (app.py 런타임 오버라이드로 주입).
-# _source_from_naver_item / fetch_google_rss 가 내장 매핑과 함께 참조한다.
-EXTRA_SOURCE_DOMAINS: Dict[str, str] = {}
-
 
 # ================================================================
 #  유틸리티
@@ -972,14 +968,9 @@ def _source_from_naver_item(original_link: str, naver_link: str, title: str) -> 
     if original_link and 'naver.com' not in original_link:
         try:
             from urllib.parse import urlparse as _up
-            host = _up(original_link).netloc.lower()
-            if host.startswith('www.'):
-                host = host[4:]
-            # 사용자 등록 도메인 우선, 그다음 내장 매핑
-            for domain, name in list(EXTRA_SOURCE_DOMAINS.items()) + list(DOMAIN_MAP.items()):
-                if not name:
-                    continue
-                if host == domain or host.endswith('.' + domain) or domain in host:
+            host = _up(original_link).netloc.lower().lstrip('www.')
+            for domain, name in DOMAIN_MAP.items():
+                if host == domain or host.endswith('.' + domain):
                     return name
         except Exception:
             pass
@@ -1194,34 +1185,21 @@ def fetch_google_rss(queries: List[str],
                 pub_str   = item.findtext('pubDate', '') or ''
                 desc_raw  = item.findtext('description', '') or ''
 
-                # ── <source url="..."> 요소 (실제 매체 도메인·이름) ──
-                #    Google News RSS link는 보통 google 리다이렉트 URL이라
-                #    매체 도메인은 <source>의 url 속성에 있다.
-                src_el   = item.find('source')
-                src_url  = (src_el.get('url') or '') if src_el is not None else ''
-                src_name = ((src_el.text or '').strip()) if src_el is not None else ''
-                match_target = (link + ' ' + src_url).lower()
-
-                # ── 차단 도메인 필터 (link + source url 모두 검사) ──
-                if any(bd in match_target for bd in BLOCKED_DOMAINS):
+                # ── 차단 도메인 필터 ──
+                if any(bd in link for bd in BLOCKED_DOMAINS):
                     continue
 
-                # ── 출처 식별: 등록 도메인 우선 → 내장 매핑 → google 이름 폴백 ──
+                # ── 출처 식별 ──
                 source = "Google News"
-                matched = False
-                for domain, name in list(EXTRA_SOURCE_DOMAINS.items()) + list(RSS_SOURCE_MAP.items()):
-                    if domain and domain.lower() in match_target:
+                for domain, name in RSS_SOURCE_MAP.items():
+                    if domain in link:
                         if name is None:
-                            source = None  # 차단 도메인
+                            source = None  # 차단
                         else:
                             source = name
-                        matched = True
                         break
                 if source is None:
                     continue
-                # 매핑 미발견 + <source> 이름 있으면 그 이름 사용 (Google News 폴백보다 정확)
-                if not matched and src_name:
-                    source = src_name
 
                 # ── 날짜 파싱 및 범위 필터 ──
                 pub_date = parse_date(pub_str)
@@ -1288,148 +1266,6 @@ def _kw_match(kw: str, text: str) -> bool:
         return all(p in text for p in parts)
     return False
 
-# ================================================================
-#  매체 공신력 (Source Authority) — 동일 기사 충돌 시 보존 우선순위
-# ================================================================
-#  설계 원칙:
-#   · 점수가 높을수록 '등록 언론사로서의 대외 공신력'이 높음.
-#   · 이 점수는 "같은 기사가 여러 매체에서 잡혔을 때 누구 링크를 살릴까"
-#     판단에만 쓴다. 단독(중복 아님) 기사는 점수와 무관하게 항상 보존.
-#   · CRE 전문지(더벨 등)는 일반 공신력 지표엔 안 잡히지만 업계 1차 소스
-#     이므로 수동 가중. 블랙비트·SPI류는 '정보가치↑·대외 공신력↓'로 분리.
-#   · OID_MAP/DOMAIN_MAP/RSS_SOURCE_MAP이 만들어내는 정규화 매체명 기준.
-#  ⚙️ 점수 조정은 이 딕셔너리 한 줄만 바꾸면 됨.
-SOURCE_AUTHORITY = {
-    # ── 통신사 (인용 표준·속보 신뢰) ──
-    "연합뉴스": 100, "연합인포맥스": 100, "뉴스1": 98, "뉴시스": 98,
-
-    # ── 주요 경제지 ──
-    "한국경제": 92, "매일경제": 92, "서울경제": 90, "머니투데이": 90,
-    "이데일리": 90, "파이낸셜뉴스": 88, "한국경제TV": 86,
-
-    # ── CRE 딜 1차 전문지 ──
-    "더벨": 88, "인베스트조선": 86, "딜사이트": 80,
-
-    # ── 종합 경제/산업·IT지 ──
-    "조선비즈": 82, "헤럴드경제": 80, "아시아경제": 80, "아주경제": 78,
-    "전자신문": 78, "뉴스핌": 76, "비즈워치": 76, "이코노미스트": 74,
-
-    # ── 4대 일간지·지상파 (공신력↑·CRE 깊이↓) ──
-    "조선일보": 75, "중앙일보": 75, "동아일보": 75, "한겨레": 74, "경향신문": 74,
-    "KBS": 74, "MBC": 74, "SBS": 74, "YTN": 72,
-
-    # ── 기타 종합일간·업계 전문지 ──
-    "국민일보": 68, "세계일보": 68, "문화일보": 68, "서울신문": 68,
-    "한국일보": 68, "디지털타임스": 66, "아이뉴스24": 64, "데일리안": 62,
-    "대한경제": 70, "건설경제": 70, "한국건설신문": 66,
-
-    # ── CRE 정보 커뮤니티/특화 서비스 (정보가치↑·대외 공신력↓) ──
-    "블랙비트": 45, "BlackBit": 45, "SPI": 45,
-}
-DEFAULT_AUTHORITY = 30           # 미매핑 매체 (제목 대괄호 추출 등)
-PORTAL_FALLBACK_AUTHORITY = 20   # 포털 폴백 (실제 매체 식별 실패)
-_PORTAL_FALLBACK_SOURCES = {"Google News", "Google뉴스", "네이버뉴스", ""}
-
-
-def _source_authority(source: str) -> int:
-    """매체 공신력 점수 반환 (미상은 기본값, 포털 폴백은 최하)."""
-    s = (source or "").strip()
-    if s in SOURCE_AUTHORITY:
-        return SOURCE_AUTHORITY[s]
-    if s in _PORTAL_FALLBACK_SOURCES:
-        return PORTAL_FALLBACK_AUTHORITY
-    return DEFAULT_AUTHORITY
-
-
-def _clamp_insight(text: str, max_len: int = 30) -> str:
-    """인사이트 한줄(한줄평)을 공백 포함 max_len자 이내로 강제 (AI 미준수 대비)."""
-    s = re.sub(r'\s+', ' ', (text or '')).strip()
-    s = s.strip('"\'\u201c\u201d').lstrip('▪•- ').strip()  # 따옴표·불릿 제거
-    if len(s) <= max_len:
-        return s
-    cut = s[:max_len]
-    sp = cut.rfind(' ')          # 끝부분에 공백 있으면 단어 보존하며 절단
-    if sp >= max_len - 8:
-        cut = cut[:sp]
-    return cut.rstrip(' ,·-')
-
-
-def apply_runtime_overrides(path: Optional[str]) -> None:
-    """app.py가 전달한 런타임 오버라이드(JSON 파일) 적용.
-
-    파일 스키마:
-      {
-        "keyword_override": bool,                 # 키워드를 검색어로 쓸지
-        "keywords": { "<cat_id>": ["키워드", ...] },
-        "source_authority": { "<매체명>": <0~100> }
-      }
-
-    동작:
-      · source_authority → SOURCE_AUTHORITY 에 병합 (동일 기사 충돌 시 보존 우선순위)
-      · keyword_override=True 이고 카테고리 키워드가 있으면
-        해당 카테고리의 search_queries·rss_queries 를 그 목록으로 교체.
-        (must_not·ai_definition 같은 품질 가드는 그대로 유지)
-    """
-    if not path or not os.path.exists(path):
-        return
-    try:
-        with open(path, 'r', encoding='utf-8') as f:
-            ov = json.load(f)
-    except Exception as e:
-        print(f"  ⚠️ 오버라이드 로드 실패: {e}")
-        return
-
-    # ── 0) 사용자 등록 사이트 도메인 매핑 ────────────────────────
-    def _norm_domain(x: str) -> str:
-        x = str(x).strip().lower()
-        x = re.sub(r'^https?://', '', x)
-        x = re.sub(r'^www\.', '', x)
-        return x.split('/')[0]
-
-    sd = ov.get("source_domains") or {}
-    applied_sd = 0
-    for domain, name in sd.items():
-        d = _norm_domain(domain)
-        n = str(name).strip()
-        if d and n:
-            EXTRA_SOURCE_DOMAINS[d] = n
-            RSS_SOURCE_MAP[d]       = n   # Google RSS <source>/link 매칭용
-            applied_sd += 1
-    if applied_sd:
-        print(f"  🌐 사이트 도메인 매핑 등록: {applied_sd}개")
-
-    # ── 1) 매체 공신력 병합 ──────────────────────────────────────
-    sa = ov.get("source_authority") or {}
-    applied_sa = 0
-    for name, score in sa.items():
-        try:
-            SOURCE_AUTHORITY[str(name).strip()] = max(0, min(100, int(score)))
-            applied_sa += 1
-        except Exception:
-            continue
-    if applied_sa:
-        print(f"  ⚖️ 매체 공신력 오버라이드 적용: {applied_sa}개 매체")
-
-    # ── 2) 키워드 → 검색어 교체 (toggle ON 일 때만) ──────────────
-    if ov.get("keyword_override"):
-        kw = ov.get("keywords") or {}
-        applied_kw = 0
-        for cat in ALL_CATEGORIES:
-            lst = kw.get(cat["id"])
-            if isinstance(lst, list):
-                cleaned = [str(k).strip() for k in lst if str(k).strip()]
-                if cleaned:
-                    cat["search_queries"] = cleaned
-                    cat["rss_queries"]    = cleaned
-                    applied_kw += 1
-                    print(f"     · [{cat['id']}] 검색어 {len(cleaned)}개로 교체")
-        if applied_kw:
-            print(f"  🔧 키워드 오버라이드: {applied_kw}개 카테고리 검색어 교체 "
-                  f"(noise 차단·AI 관련성 판단은 유지)")
-        else:
-            print("  ℹ️ keyword_override=True 이나 적용할 카테고리 키워드 없음 → 내장 검색어 사용")
-
-
 def filter_and_dedupe(items: List[Dict], category: Dict,
                       threshold: float = 0.65) -> List[Dict]:
     """노이즈 차단 + 제목 유사도 중복 제거 (관련성 판단은 AI에 위임)
@@ -1464,36 +1300,22 @@ def filter_and_dedupe(items: List[Dict], category: Dict,
     # 스코어 높은 순 → AI가 배치 상위 기사를 먼저 검토
     filtered.sort(key=lambda x: x["relevance_score"], reverse=True)
 
-    # 4) 해시 + 제목 유사도 중복 제거 — 동일 기사 충돌 시 '공신력 높은 매체' 보존
-    #    relevance_score 정렬은 유지하되, 중복 승자는 매체 공신력으로 결정한다.
-    #    (단독 기사는 공신력과 무관하게 보존 → 전문지 독점 정보 손실 방지)
-    unique: List[Dict] = []
-
-    def _find_dup_index(cand: Dict) -> Optional[int]:
-        for k, u in enumerate(unique):
-            if cand["hash_id"] == u["hash_id"]:
-                return k
-            if (text_similarity(cand["title"], u["title"]) > threshold
-                    or is_same_event(cand["title"], u["title"])):
-                return k
-        return None
+    # 4) 해시 + 제목 유사도 중복 제거
+    unique:       List[Dict] = []
+    seen_hashes:  set        = set()
 
     for item in filtered:
-        dup = _find_dup_index(item)
-        if dup is None:
-            unique.append(item)
+        if item["hash_id"] in seen_hashes:
             continue
-        # 중복 기사 — 공신력 비교 후 높은 매체로 교체
-        kept = unique[dup]
-        if _source_authority(item.get("source", "")) > _source_authority(kept.get("source", "")):
-            item["relevance_score"] = max(item.get("relevance_score", 0),
-                                          kept.get("relevance_score", 0))
-            print(f"  🔁 중복 교체(공신력): {kept.get('source','?')} → "
-                  f"{item.get('source','?')} | {item['title'][:32]}")
-            unique[dup] = item
+        is_dup = any(
+            text_similarity(item["title"], u["title"]) > threshold
+            or is_same_event(item["title"], u["title"])
+            for u in unique
+        )
+        if not is_dup:
+            unique.append(item)
+            seen_hashes.add(item["hash_id"])
 
-    # AI 큐레이션 배치는 관련도 순서 유지 (공신력은 '보존 매체' 결정에만 사용)
-    unique.sort(key=lambda x: x.get("relevance_score", 0), reverse=True)
     return unique
 
 
@@ -2040,10 +1862,9 @@ def _build_combined_prompt(batch: List[Dict], cat_name: str, category: Dict) -> 
    - 줄1: 핵심사실 (주체+행위+수치)
    - 줄2: 줄1과 다른 정보 (위치·배경·전망). 없으면 1줄만.
 2. short_summary: summary 핵심을 1줄로. 40자 이하.
-3. comment(인사이트 한줄): 공백 포함 30자 이내. CRE 임대차·투자 실무자 시각의 핵심 함의 한 줄(예측·리스크·기회 중 하나). 사실 단순 반복 금지, 완결형으로 끝낼 것.
-4. 완결어미 필수: ~했다 / ~됐다 / ~예정 / ~체결 / ~선정 / ~전망 / ~확대
-5. 조사(을·를·이·가·의·에서·통해·위해·등·및)로 끝나는 줄 출력 금지.
-6. 원문 문장 그대로 복사 금지.
+3. 완결어미 필수: ~했다 / ~됐다 / ~예정 / ~체결 / ~선정 / ~전망 / ~확대
+4. 조사(을·를·이·가·의·에서·통해·위해·등·및)로 끝나는 줄 출력 금지.
+5. 원문 문장 그대로 복사 금지.
 
 【예시】
 기사: "DL이앤씨가 코리안리 신사옥 4000억 공사 우선협상자로 선정됐다. 종로 수송동에 21층 규모로 2026년 착공 예정."
@@ -2058,7 +1879,7 @@ def _build_combined_prompt(batch: List[Dict], cat_name: str, category: Dict) -> 
     "relevance": "HIGH",
     "summary": "▪ 줄1\\n▪ 줄2",
     "short_summary": "한줄요약",
-    "comment": "<인사이트 한줄·공백포함 30자 이내>",
+    "comment": "<CRE 실무자 한줄평>",
     "tags": ["태그1", "태그2"]
   }}
 ]
@@ -2082,7 +1903,7 @@ def _apply_combined_results(batch: List[Dict], results: List[Dict],
         # ── 큐레이션 메타 ─────────────────────────────────────────
         item["ai_model"]     = model_name
         item["ai_relevance"] = res.get("relevance", "HIGH")
-        item["ai_comment"]   = _clamp_insight(res.get("comment", ""), 30)
+        item["ai_comment"]   = res.get("comment", "")
         item["ai_reason"]    = res.get("reason", "")
         item["ai_tags"]      = res.get("tags", [])
 
@@ -2509,8 +2330,6 @@ def main():
                         help="종료일 YYYY-MM-DD")
     parser.add_argument("--category",   dest="category", default=None,
                         help="테스트용: 단일 카테고리 ID (예: office_lease)")
-    parser.add_argument("--overrides",   dest="overrides", default=None,
-                        help="런타임 오버라이드 JSON 경로 (키워드 검색어·매체 공신력)")
     args = parser.parse_args()
 
     # 날짜 범위 결정
@@ -2526,9 +2345,6 @@ def main():
         date_from = (NOW - timedelta(days=args.days)).replace(hour=0, minute=0, second=0)
 
     config = NewsConfig()
-
-    # ⭐ 런타임 오버라이드(키워드 검색어 교체 + 매체 공신력 조정) 적용
-    apply_runtime_overrides(getattr(args, "overrides", None))
 
     print(f"\n🏢 CRE Daily Brief — 뉴스 수집 v2.0  (Google News RSS)")
     print(f"⏰ {NOW.strftime('%Y-%m-%d %H:%M:%S KST')}")
