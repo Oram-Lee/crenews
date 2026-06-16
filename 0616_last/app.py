@@ -358,6 +358,29 @@ def collect_news():
     days      = body.get('days', 3)
     category  = body.get('category', '')
 
+    # ⭐ 런타임 오버라이드 기록 — 프런트(localStorage)에서 보낸
+    #    키워드 검색어 교체 + 매체 공신력 조정을 파일로 남겨 collect_news.py에 전달.
+    #    (데이터가 커서 CLI 인자로 못 넘기므로 파일 경유)
+    overrides = {
+        'keyword_override': bool(body.get('keyword_override', False)),
+        'keywords':         body.get('keywords') or {},
+        'source_authority': body.get('source_authority') or {},
+        'source_domains':   body.get('source_domains') or {},
+        'prompt_global':     body.get('prompt_global') or '',
+        'prompt_categories': body.get('prompt_categories') or {},
+    }
+    ov_path = os.path.join(BASE_DIR, 'data', 'run_overrides.json')
+    try:
+        os.makedirs(os.path.join(BASE_DIR, 'data'), exist_ok=True)
+        with open(ov_path, 'w', encoding='utf-8') as f:
+            json.dump(overrides, f, ensure_ascii=False)
+        kw_on  = overrides['keyword_override']
+        sa_cnt = len(overrides['source_authority'])
+        sd_cnt = len(overrides['source_domains'])
+        print(f"[news] 🔧 오버라이드 기록: 키워드교체={kw_on}, 공신력조정={sa_cnt}개, 도메인등록={sd_cnt}개", flush=True)
+    except Exception as e:
+        print(f"[news] ⚠️ 오버라이드 기록 실패: {e}", flush=True)
+
     cmd = [sys.executable, '-u', script]
     if date_from and date_to:
         cmd += ['--from-date', date_from, '--to-date', date_to]
@@ -365,6 +388,7 @@ def collect_news():
         cmd += ['--days', str(days)]
     if category:
         cmd += ['--category', category]
+    cmd += ['--overrides', ov_path]
 
     threading.Thread(
         target=_run_job, args=('news', cmd), daemon=True

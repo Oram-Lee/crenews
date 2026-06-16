@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>S&I Weekly News Curation</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg-primary:#f5f7fa; --bg-secondary:#ffffff; --bg-card:#ffffff; --bg-input:#f1f5f9;
+  --border:#e2e8f0; --text-primary:#1e293b; --text-secondary:#64748b; --text-muted:#94a3b8;
+  --accent-blue:#3b82f6; --accent-cyan:#0891b2; --accent-green:#059669; --accent-amber:#d97706;
+  --accent-red:#dc2626; --accent-purple:#7c3aed;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:0 4px 12px rgba(0,0,0,.07),0 2px 4px rgba(0,0,0,.04);
+  --radius-sm:6px; --radius-md:10px; --radius-lg:16px; --transition:.2s cubic-bezier(.4,0,.2,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans-serif;background:var(--bg-primary);color:var(--text-primary);line-height:1.5;font-size:14px}
+.app{display:flex;min-height:100vh}
+
+/* Sidebar */
+.sidebar{width:260px;background:var(--bg-secondary);border-right:1px solid var(--border);padding:18px 14px;flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto}
+.brand{font-size:1.05rem;font-weight:800;letter-spacing:.02em;color:var(--text-primary)}
+.brand-sub{font-size:.66rem;color:var(--text-muted);margin-top:2px;letter-spacing:.04em}
+.back-link{display:inline-flex;align-items:center;gap:5px;margin-top:12px;font-size:.74rem;color:var(--accent-blue);text-decoration:none;padding:5px 9px;border:1px solid var(--border);border-radius:8px}
+.back-link:hover{background:var(--bg-input)}
+.side-label{font-size:.66rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin:20px 0 8px}
+.side-item{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:9px;cursor:pointer;font-size:.82rem;color:var(--text-secondary);transition:var(--transition)}
+.side-item:hover{background:var(--bg-input);color:var(--text-primary)}
+.side-item .ic{width:20px;text-align:center}
+.side-badge{margin-left:auto;font-size:.62rem;padding:2px 7px;border-radius:9px;background:var(--accent-blue);color:#fff}
+
+/* Main */
+.main{flex:1;min-width:0;padding:22px 28px 60px}
+.topbar{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+.title{font-size:1.5rem;font-weight:800}
+.title .accent{color:var(--accent-blue)}
+.subtitle{font-size:.8rem;color:var(--text-secondary);margin-top:4px}
+
+.card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);padding:18px 20px;margin-bottom:18px}
+.card h2{font-size:1rem;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.card .hint{font-size:.74rem;color:var(--text-muted);margin-bottom:14px}
+
+.step-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.step-tag{font-size:.7rem;font-weight:700;color:#fff;background:var(--accent-purple);padding:3px 9px;border-radius:8px;white-space:nowrap}
+.step-tag.b2{background:var(--accent-green)}
+
+.btn{border:none;border-radius:9px;padding:9px 16px;font-size:.82rem;font-weight:600;cursor:pointer;transition:var(--transition);font-family:inherit}
+.btn-primary{background:var(--accent-blue);color:#fff}
+.btn-primary:hover{background:#2563eb}
+.btn-green{background:var(--accent-green);color:#fff}
+.btn-green:hover{filter:brightness(1.08)}
+.btn-outline{background:#fff;border:1px solid var(--border);color:var(--text-secondary)}
+.btn-outline:hover{background:var(--bg-input)}
+.btn-sm{padding:5px 11px;font-size:.74rem}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+input,select,textarea{font-family:inherit}
+.inp{height:34px;border:1px solid #cbd5e1;border-radius:7px;padding:0 10px;font-size:.82rem;background:#fff}
+.inp.num{width:74px;text-align:center}
+
+.log{margin-top:12px;background:#0f172a;color:#cbd5e1;border-radius:8px;padding:10px 12px;font-size:.72rem;line-height:1.55;font-family:ui-monospace,Menlo,monospace;max-height:170px;overflow-y:auto;white-space:pre-wrap;display:none}
+.log.show{display:block}
+
+/* Pool */
+.pool-grid{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+.pool-stat{background:var(--bg-input);border-radius:10px;padding:10px 14px;min-width:96px}
+.pool-stat .n{font-size:1.3rem;font-weight:800;color:var(--accent-blue)}
+.pool-stat .l{font-size:.66rem;color:var(--text-muted);margin-top:2px}
+.chip{display:inline-flex;align-items:center;gap:5px;background:#eef2ff;color:#4338ca;font-size:.72rem;padding:3px 10px;border-radius:10px;margin:3px}
+.chip b{font-weight:800}
+
+/* Highlights */
+.hl-card{border:1px solid #c4b5fd;background:linear-gradient(135deg,#faf5ff,#f5f3ff);border-radius:12px;padding:14px 16px;margin-bottom:10px}
+.hl-head{display:flex;align-items:flex-start;gap:10px}
+.hl-rank{flex-shrink:0;width:26px;height:26px;border-radius:50%;background:var(--accent-purple);color:#fff;font-size:.78rem;font-weight:800;display:flex;align-items:center;justify-content:center}
+.hl-body{flex:1;min-width:0}
+.hl-line{font-weight:700;font-size:.92rem;color:#3b0764;border:1px dashed transparent;border-radius:6px;padding:2px 4px}
+.hl-line:focus{outline:none;border-color:#c4b5fd;background:#fff}
+.hl-reason{font-size:.76rem;color:#7c3aed;margin-top:4px;padding:2px 4px;border:1px dashed transparent;border-radius:6px}
+.hl-reason:focus{outline:none;border-color:#c4b5fd;background:#fff}
+.hl-meta{font-size:.68rem;color:#94a3b8;margin-top:5px}
+.hl-meta a{color:#7c3aed;text-decoration:none}
+.hl-ctrl{display:flex;flex-direction:column;gap:3px}
+.hl-ctrl button{border:none;background:#ede9fe;color:#6d28d9;border-radius:6px;width:24px;height:22px;cursor:pointer;font-size:.7rem}
+
+/* Category sections */
+.cat-sec{margin-bottom:16px}
+.cat-h{display:flex;align-items:center;gap:8px;font-size:.95rem;font-weight:700;padding:8px 0;border-bottom:2px solid var(--border);margin-bottom:10px}
+.cat-h .cnt{margin-left:auto;font-size:.7rem;color:var(--text-muted);font-weight:500}
+.news{border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:9px;background:#fff}
+.news-top{display:flex;gap:8px;align-items:center;font-size:.68rem;color:var(--text-muted);margin-bottom:5px;flex-wrap:wrap}
+.news-src{background:var(--bg-input);padding:1px 7px;border-radius:8px;color:var(--text-secondary)}
+.news-title{font-weight:700;font-size:.9rem;line-height:1.4}
+.news-title a{color:var(--text-primary);text-decoration:none}
+.news-title a:hover{color:var(--accent-blue)}
+.news-sum{font-size:.8rem;color:var(--text-secondary);margin-top:6px;white-space:pre-wrap;line-height:1.6}
+.insight{margin-top:8px;background:linear-gradient(135deg,#fef3c7,#fef9c3);border-radius:8px;padding:7px 11px;font-size:.78rem;color:#92400e}
+.insight b{font-weight:800}
+.insight [contenteditable]{outline:none;border-bottom:1px dashed transparent}
+.insight [contenteditable]:focus{border-color:#d97706}
+.empty{font-size:.78rem;color:var(--text-muted);padding:8px 2px}
+
+/* Modal */
+.overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;align-items:center;justify-content:center;z-index:1000;padding:20px}
+.overlay.active{display:flex}
+.modal{background:#fff;border-radius:var(--radius-lg);width:680px;max-width:96vw;max-height:90vh;display:flex;flex-direction:column;box-shadow:var(--shadow-md)}
+.modal-h{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border)}
+.modal-h h3{font-size:1rem}
+.modal-b{padding:16px 20px;overflow-y:auto}
+.modal-f{padding:14px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
+.cat-toggle{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid var(--border);border-radius:9px;margin-bottom:7px;cursor:pointer}
+.cat-toggle input{width:17px;height:17px;accent-color:var(--accent-blue)}
+.cat-toggle.off{opacity:.55}
+.ta{width:100%;min-height:84px;resize:vertical;border:1px solid #cbd5e1;border-radius:8px;padding:9px 11px;font-size:.82rem;line-height:1.6}
+
+/* Toast */
+#toast{position:fixed;bottom:-60px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;padding:11px 22px;border-radius:10px;font-size:.82rem;transition:bottom .3s;z-index:2000;box-shadow:var(--shadow-md)}
+#toast.show{bottom:26px}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- ===== Sidebar ===== -->
+  <aside class="sidebar">
+    <div class="brand">S&amp;I WEEKLY</div>
+    <div class="brand-sub">News Curation &amp; Highlights</div>
+    <a class="back-link" href="index.html">← Daily Brief 로</a>
+
+    <div class="side-label">위클리 설정</div>
+    <div class="side-item" onclick="openCatModal()"><span class="ic">🗂️</span><span>활성 카테고리</span><span class="side-badge" id="catBadge">5</span></div>
+    <div class="side-item" onclick="openPromptModal()"><span class="ic">✍️</span><span>큐레이션 프롬프트</span><span class="side-badge" id="promptBadge" style="background:#0ea5e9">기본</span></div>
+
+    <div class="side-label">공유 설정 (Daily)</div>
+    <div class="side-item" onclick="window.open('index.html','_blank')"><span class="ic">🏷️</span><span>키워드 관리</span></div>
+    <div class="side-item" onclick="window.open('index.html','_blank')"><span class="ic">⚖️</span><span>매체 공신력</span></div>
+    <div class="side-item" onclick="window.open('index.html','_blank')"><span class="ic">🔌</span><span>소스 관리</span></div>
+    <div style="font-size:.66rem;color:var(--text-muted);margin-top:8px;line-height:1.5">위 설정은 Daily 페이지와 <b>동일 저장소를 공유</b>합니다. 그곳에서 바꾼 키워드·공신력·도메인이 위클리 수집/큐레이션에도 그대로 적용됩니다.</div>
+  </aside>
+
+  <!-- ===== Main ===== -->
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <div class="title">S&amp;I <span class="accent">Weekly</span> News Curation</div>
+        <div class="subtitle">매일 수집으로 풀을 쌓고, 주 1회 큐레이션 + S&amp;I Weekly Highlights를 생성합니다 (하이브리드)</div>
+      </div>
+    </div>
+
+    <!-- 파이프라인: ① 매일 수집 -->
+    <div class="card">
+      <h2>🗓️ ① 매일 수집 <span style="font-size:.7rem;font-weight:600;color:var(--accent-green)">· LLM 미사용 · 사실상 무료</span></h2>
+      <div class="hint">매일 돌려 기사를 <b>주간 풀</b>에 누적합니다(중복 자동 제거, 14일 경과분 정리). 요약은 안 하고 수집만 합니다.</div>
+      <div class="step-row">
+        <span class="step-tag">STEP 1</span>
+        <span style="font-size:.8rem;color:var(--text-secondary)">최근</span>
+        <input class="inp num" type="number" id="wkCollectDays" value="1" min="1" max="7">
+        <span style="font-size:.8rem;color:var(--text-secondary)">일치 수집</span>
+        <button class="btn btn-primary" id="btnCollect" onclick="collectDaily()">오늘 수집 실행</button>
+        <button class="btn btn-outline btn-sm" onclick="loadPool()">풀 새로고침</button>
+      </div>
+      <div class="log" id="collectLog"></div>
+
+      <!-- 풀 현황 -->
+      <div style="margin-top:16px">
+        <div style="font-size:.78rem;font-weight:700;color:var(--text-secondary);margin-bottom:6px">📦 주간 풀 현황 <span id="poolUpdated" style="font-weight:500;color:var(--text-muted)"></span></div>
+        <div class="pool-grid" id="poolStats"><span class="empty">풀 정보를 불러오는 중…</span></div>
+        <div id="poolByCat" style="margin-top:8px"></div>
+      </div>
+    </div>
+
+    <!-- 파이프라인: ② 주간 큐레이션 -->
+    <div class="card">
+      <h2>⭐ ② 주간 큐레이션 + 하이라이트</h2>
+      <div class="hint">풀에서 <b>기간 내 기사</b>를 꺼내 2단 선별(룰 랭킹 → 카테고리당 상위 N건만 AI 요약) 후, 전체에서 핵심 Top-N을 골라 하이라이트를 만듭니다. (보통 수요일 1회)</div>
+      <div class="step-row">
+        <span class="step-tag b2">STEP 2</span>
+        <span style="font-size:.8rem;color:var(--text-secondary)">기간</span>
+        <input class="inp" type="date" id="wkFrom">
+        <span style="color:var(--text-muted)">~</span>
+        <input class="inp" type="date" id="wkTo">
+        <span style="font-size:.8rem;color:var(--text-secondary);margin-left:6px">하이라이트</span>
+        <input class="inp num" type="number" id="wkTopN" value="5" min="1" max="8">
+        <span style="font-size:.8rem;color:var(--text-secondary)">건</span>
+        <button class="btn btn-green" id="btnCurate" onclick="runWeekly()">주간 큐레이션 실행</button>
+      </div>
+      <div class="log" id="curateLog"></div>
+    </div>
+
+    <!-- 결과: 하이라이트 -->
+    <div class="card" id="resultCard" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:6px">
+        <h2 style="margin:0">📰 뉴스레터 미리보기 <span id="resultRange" style="font-size:.72rem;font-weight:500;color:var(--text-muted)"></span></h2>
+        <div style="display:flex;gap:7px">
+          <button class="btn btn-outline btn-sm" onclick="copyNewsletterHtml()">📋 HTML 복사</button>
+          <button class="btn btn-primary btn-sm" onclick="previewNewsletter()">🔎 미리보기 열기</button>
+        </div>
+      </div>
+
+      <div style="background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border-radius:12px;padding:13px 16px;margin:10px 0 16px">
+        <div style="font-size:1rem;font-weight:800;letter-spacing:.02em">⭐ S&amp;I Weekly Highlights</div>
+        <div style="font-size:.72rem;opacity:.85;margin-top:2px">회사 관점 핵심 이슈 — AI 1차 선정 · 헤드라인/사유 직접 편집 가능</div>
+      </div>
+      <div id="highlightsArea"></div>
+
+      <div style="margin:22px 0 8px;border-top:1px solid var(--border)"></div>
+      <h2 style="margin-bottom:12px">🗂️ 카테고리별 기사</h2>
+      <div id="categoriesArea"></div>
+    </div>
+
+    <div class="card" id="emptyResult">
+      <div class="empty">아직 주간 큐레이션 결과가 없습니다. ①로 풀을 채운 뒤 ②를 실행하세요.</div>
+    </div>
+  </main>
+</div>
+
+<!-- ===== 활성 카테고리 모달 ===== -->
+<div class="overlay" id="catModal">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-h"><h3>🗂️ 활성 카테고리</h3><button class="btn btn-outline btn-sm" onclick="closeModal('catModal')">✕</button></div>
+    <div class="modal-b">
+      <div style="font-size:.76rem;color:var(--text-muted);margin-bottom:12px">위클리 수집·큐레이션에 포함할 카테고리만 켜세요. (마케팅팀 5개 기준: 스마트빌딩&amp;ESG 기본 OFF)</div>
+      <div id="catToggles"></div>
+    </div>
+    <div class="modal-f"><button class="btn btn-primary" onclick="closeModal('catModal');toast('✅ 활성 카테고리 저장됨')">저장 &amp; 닫기</button></div>
+  </div>
+</div>
+
+<!-- ===== 큐레이션 프롬프트 모달 (공유 키) ===== -->
+<div class="overlay" id="promptModal">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-h"><h3>✍️ 큐레이션 프롬프트 지침</h3><button class="btn btn-outline btn-sm" onclick="closeModal('promptModal')">✕</button></div>
+    <div class="modal-b">
+      <div style="font-size:.76rem;color:#0369a1;background:#f0f9ff;border-radius:8px;padding:10px 12px;margin-bottom:14px;line-height:1.6">
+        구조(기사 주입·JSON·파싱)는 고정, 아래 지침만 편집됩니다. 저장 후 다음 큐레이션부터 적용. <b>Daily 페이지와 동일 저장소 공유.</b><br>
+        💡 <b>S&amp;I Insight 톤</b>(회사 관점)·<b>S&amp;I 맥락</b>은 공통 지침에, <b>광고성 기사 제외</b> 같은 카테고리 고유 규칙은 카테고리별 지침에 적으세요.
+      </div>
+      <div style="font-size:.78rem;font-weight:700;color:#0c4a6e;margin-bottom:5px">🌐 공통 지침 (모든 카테고리 + 하이라이트 S&amp;I 맥락)</div>
+      <textarea class="ta" id="pGlobal" placeholder="예) S&I는 오피스 임대차·자산운용·기업 워크플레이스/공간 솔루션 회사다. S&I Insight는 회사 관점의 함의로, 임차인·자산운용 시각에서 작성."></textarea>
+      <div style="font-size:.78rem;font-weight:700;color:#0c4a6e;margin:16px 0 5px">🗂️ 카테고리별 지침</div>
+      <select class="inp" id="pCatSel" style="width:100%;height:36px;margin-bottom:8px" onchange="loadPCat()"></select>
+      <textarea class="ta" id="pCat" placeholder="예) 분양대행·중개법인 홍보성 기사 제외. '입주 혜택'·'무료 컨설팅' 위주면 제외."></textarea>
+    </div>
+    <div class="modal-f">
+      <button class="btn btn-outline" onclick="resetPrompts()">초기화</button>
+      <button class="btn btn-primary" onclick="savePromptsAll();closeModal('promptModal');toast('✅ 프롬프트 지침 저장됨')">저장 &amp; 닫기</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ============ 공통 유틸 ============
+const $  = s => document.querySelector(s);
+const ls = k => localStorage.getItem(k);
+function jget(k,d){ try{ const v=JSON.parse(localStorage.getItem(k)); return v==null?d:v; }catch{ return d; } }
+function toast(m){ const t=$('#toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2600); }
+function esc(s){ return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+const CAT_META = {
+  real_estate_market:{label:'부동산 시장 & 정책',icon:'📊'},
+  office_lease:{label:'오피스 임대차',icon:'🏢'},
+  asset_transaction:{label:'자산 매입·매각',icon:'💼'},
+  corporate_space:{label:'기업 공간 전략',icon:'🏗️'},
+  industrial_asset:{label:'산업용 자산',icon:'🏭'},
+  smart_esg:{label:'스마트 빌딩 & ESG',icon:'🌿'},
+};
+const ALL_CAT_IDS = Object.keys(CAT_META);
+const DEFAULT_ENABLED = ['real_estate_market','office_lease','asset_transaction','corporate_space','industrial_asset']; // ESG off
+
+// ============ 활성 카테고리 ============
+function getEnabledCats(){ const v=jget('cre_enabled_categories',null); return Array.isArray(v)&&v.length?v:DEFAULT_ENABLED.slice(); }
+function renderCatToggles(){
+  const en=getEnabledCats();
+  $('#catToggles').innerHTML = ALL_CAT_IDS.map(id=>{
+    const m=CAT_META[id], on=en.includes(id);
+    return `<label class="cat-toggle ${on?'':'off'}"><input type="checkbox" ${on?'checked':''} onchange="toggleCat('${id}',this.checked)"><span>${m.icon} ${m.label}</span></label>`;
+  }).join('');
+  updateCatBadge();
+}
+function toggleCat(id,on){
+  let en=getEnabledCats();
+  if(on){ if(!en.includes(id)) en.push(id); } else { en=en.filter(x=>x!==id); }
+  localStorage.setItem('cre_enabled_categories',JSON.stringify(en));
+  renderCatToggles();
+}
+function updateCatBadge(){ $('#catBadge').textContent=getEnabledCats().length; }
+function openCatModal(){ renderCatToggles(); $('#catModal').classList.add('active'); }
+
+// ============ 프롬프트 지침 (공유 키: cre_prompt_global / cre_prompt_cats) ============
+function loadPromptCats(){ return jget('cre_prompt_cats',{}); }
+function openPromptModal(){
+  $('#pGlobal').value = ls('cre_prompt_global')||'';
+  const sel=$('#pCatSel');
+  sel.innerHTML = ALL_CAT_IDS.map(id=>`<option value="${id}">${CAT_META[id].icon} ${CAT_META[id].label}</option>`).join('');
+  sel.value='real_estate_market'; loadPCat();
+  $('#promptModal').classList.add('active');
+}
+function loadPCat(){ $('#pCat').value = (loadPromptCats()[$('#pCatSel').value])||''; }
+function savePromptsAll(){
+  localStorage.setItem('cre_prompt_global',$('#pGlobal').value);
+  const cats=loadPromptCats(); cats[$('#pCatSel').value]=$('#pCat').value;
+  localStorage.setItem('cre_prompt_cats',JSON.stringify(cats));
+  updatePromptBadge();
+}
+function resetPrompts(){
+  if(!confirm('공통·카테고리별 지침을 모두 비우시겠습니까?')) return;
+  localStorage.removeItem('cre_prompt_global'); localStorage.removeItem('cre_prompt_cats');
+  $('#pGlobal').value=''; $('#pCat').value=''; updatePromptBadge(); toast('↺ 초기화됨');
+}
+function updatePromptBadge(){
+  const g=(ls('cre_prompt_global')||'').trim()?1:0;
+  const c=Object.values(loadPromptCats()).filter(v=>(v||'').trim()).length;
+  $('#promptBadge').textContent=(g+c)?`${g+c}개`:'기본';
+}
+function closeModal(id){ if(id==='pCatSave'){} document.getElementById(id).classList.remove('active'); if(id==='promptModal') savePromptsAll(); }
+
+// ============ 오버라이드 (index.html과 동일 스키마 + enabled_categories) ============
+function getOverrides(){
+  const kwOn = ls('cre_keyword_override')==='1';
+  const authority = {...jget('cre_authority',{})};
+  const domains = {};
+  jget('cre_sites',[]).forEach(s=>{ authority[s.name]=s.score; domains[s.domain]=s.name; });
+  const catsRaw = loadPromptCats(); const promptCats={};
+  Object.keys(catsRaw).forEach(k=>{ if((catsRaw[k]||'').trim()) promptCats[k]=catsRaw[k].trim(); });
+  return {
+    keyword_override:kwOn, keywords: kwOn?jget('cre_keywords',{}):{},
+    source_authority:authority, source_domains:domains,
+    prompt_global:(ls('cre_prompt_global')||'').trim(), prompt_categories:promptCats,
+    enabled_categories:getEnabledCats(),
+  };
+}
+
+// ============ 파이프라인 (collect / pool / curate + 폴링) ============
+let _poll=null;
+async function postAndPoll(url, body, logSel, onDone, btnSel){
+  const logEl=$(logSel); logEl.classList.add('show'); logEl.textContent='요청 전송 중…';
+  if(btnSel) $(btnSel).disabled=true;
+  try{
+    const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(r.status===409){ logEl.textContent='⚠️ 이미 실행 중입니다. 잠시 후 다시 시도하세요.'; if(btnSel)$(btnSel).disabled=false; return; }
+  }catch(e){ logEl.textContent='❌ 서버 연결 실패: '+e.message; if(btnSel)$(btnSel).disabled=false; return; }
+  let since=0; logEl.textContent='';
+  clearInterval(_poll);
+  _poll=setInterval(async()=>{
+    try{
+      const s=await (await fetch(`/api/job/status?job=weekly&since=${since}`)).json();
+      if(s.logs&&s.logs.length){ logEl.textContent+=s.logs.join('\n')+'\n'; since=s.total; logEl.scrollTop=logEl.scrollHeight; }
+      if(s.done){
+        clearInterval(_poll);
+        if(btnSel)$(btnSel).disabled=false;
+        logEl.textContent+= s.success?'\n✅ 완료':'\n❌ 실패 (로그 확인)';
+        logEl.scrollTop=logEl.scrollHeight;
+        if(s.success&&onDone) onDone();
+      }
+    }catch(e){/* keep polling */}
+  },1200);
+}
+function collectDaily(){
+  postAndPoll('/api/weekly/collect',{days:+($('#wkCollectDays').value||1),...getOverrides()},'#collectLog',loadPool,'#btnCollect');
+}
+function runWeekly(){
+  const from=$('#wkFrom').value, to=$('#wkTo').value;
+  if(!from||!to){ toast('⚠️ 기간을 선택하세요'); return; }
+  postAndPoll('/api/weekly/curate',{date_from:from,date_to:to,top:+($('#wkTopN').value||5),...getOverrides()},'#curateLog',loadWeeklyNews,'#btnCurate');
+}
+
+async function loadPool(){
+  try{
+    const p=await (await fetch('/api/weekly/pool?_='+Date.now())).json();
+    $('#poolUpdated').textContent = p.updated_at?`· 갱신 ${p.updated_at}`:'';
+    const days=Object.entries(p.by_date||{});
+    $('#poolStats').innerHTML =
+      `<div class="pool-stat"><div class="n">${p.total||0}</div><div class="l">총 기사</div></div>`+
+      `<div class="pool-stat"><div class="n">${days.length}</div><div class="l">수집 일수</div></div>`+
+      days.slice(-7).map(([d,n])=>`<div class="pool-stat"><div class="n" style="font-size:1rem">${n}</div><div class="l">${d.slice(5)}</div></div>`).join('');
+    const cats=Object.entries(p.by_category||{});
+    $('#poolByCat').innerHTML = cats.length? cats.map(([c,n])=>`<span class="chip">${esc(c)} <b>${n}</b></span>`).join('') : '';
+  }catch(e){ $('#poolStats').innerHTML='<span class="empty">풀이 비어있습니다. ① 수집을 먼저 실행하세요.</span>'; }
+}
+
+// ============ 결과 렌더 (하이라이트 + 카테고리) ============
+let WK=null; // 현재 weekly_news.json (메모리 편집본)
+async function loadWeeklyNews(){
+  try{
+    WK=await (await fetch('/data/weekly_news.json?_='+Date.now())).json();
+  }catch(e){ toast('❌ 결과 로드 실패'); return; }
+  $('#emptyResult').style.display='none';
+  $('#resultCard').style.display='block';
+  $('#resultRange').textContent = WK.date_from?`(${WK.date_from} ~ ${WK.date_to} · 풀 ${WK.pool_size||0}건)`:'';
+  renderHighlights(); renderCategories();
+  $('#resultCard').scrollIntoView({behavior:'smooth'});
+}
+function renderHighlights(){
+  const hl=WK.highlights||[];
+  if(!hl.length){ $('#highlightsArea').innerHTML='<div class="empty">하이라이트가 없습니다.</div>'; return; }
+  $('#highlightsArea').innerHTML = hl.map((h,i)=>`
+    <div class="hl-card">
+      <div class="hl-head">
+        <div class="hl-rank">${i+1}</div>
+        <div class="hl-body">
+          <div class="hl-line" contenteditable oninput="WK.highlights[${i}].headline=this.textContent">${esc(h.headline||h.ai_short_summary||h.title)}</div>
+          <div class="hl-reason" contenteditable oninput="WK.highlights[${i}].reason=this.textContent">${esc(h.reason||'')}</div>
+          <div class="hl-meta">${esc(h.category_name||'')} · ${esc(h.source||'')} ${h.link?`· <a href="${esc(h.link)}" target="_blank">기사 ↗</a>`:''}</div>
+        </div>
+        <div class="hl-ctrl">
+          <button onclick="moveHl(${i},-1)" title="위로">▲</button>
+          <button onclick="moveHl(${i},1)" title="아래로">▼</button>
+          <button onclick="delHl(${i})" title="제외" style="background:#fee2e2;color:#dc2626">✕</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+function moveHl(i,d){ const a=WK.highlights,j=i+d; if(j<0||j>=a.length)return; [a[i],a[j]]=[a[j],a[i]]; renderHighlights(); }
+function delHl(i){ WK.highlights.splice(i,1); renderHighlights(); }
+
+function renderCategories(){
+  const cats=(WK.categories||[]).filter(c=>c.count>0);
+  if(!cats.length){ $('#categoriesArea').innerHTML='<div class="empty">선별된 기사가 없습니다.</div>'; return; }
+  $('#categoriesArea').innerHTML = cats.map(c=>`
+    <div class="cat-sec">
+      <div class="cat-h">${c.icon||CAT_META[c.id]?.icon||''} ${esc(c.name)} <span class="cnt">${c.count}건</span></div>
+      ${c.items.map((it,k)=>`
+        <div class="news">
+          <div class="news-top"><span class="news-src">${esc(it.source||'')}</span><span>${(it.pub_date||'').slice(0,10)}</span></div>
+          <div class="news-title"><a href="${esc(it.link||'#')}" target="_blank">${esc(it.title||'')}</a></div>
+          ${it.ai_summary?`<div class="news-sum">${esc(it.ai_summary)}</div>`:''}
+          <div class="insight">💬 <b>S&amp;I Insight:</b> <span contenteditable oninput="setComment('${c.id}',${k},this.textContent)">${esc(it.ai_comment||'')}</span></div>
+        </div>`).join('')}
+    </div>`).join('');
+}
+function setComment(cid,k,v){ const c=(WK.categories||[]).find(x=>x.id===cid); if(c&&c.items[k]) c.items[k].ai_comment=v; }
+
+// ============ 뉴스레터 HTML 빌드/내보내기 ============
+function buildNewsletterHtml(){
+  if(!WK) return '';
+  const hl=(WK.highlights||[]);
+  const hlHtml = hl.length?`
+    <div style="background:#6d28d9;color:#fff;padding:16px 20px;border-radius:10px;margin-bottom:20px">
+      <div style="font-size:18px;font-weight:800">⭐ S&amp;I Weekly Highlights</div>
+    </div>
+    ${hl.map((h,i)=>`
+      <div style="border-left:4px solid #7c3aed;padding:8px 14px;margin-bottom:12px;background:#faf5ff;border-radius:0 8px 8px 0">
+        <div style="font-weight:700;font-size:15px;color:#3b0764">${i+1}. ${esc(h.headline||'')}</div>
+        ${h.reason?`<div style="font-size:12px;color:#7c3aed;margin-top:3px">${esc(h.reason)}</div>`:''}
+        <div style="font-size:11px;color:#94a3b8;margin-top:4px">${esc(h.category_name||'')} · ${esc(h.source||'')} ${h.link?`· <a href="${esc(h.link)}" style="color:#7c3aed">기사 보기</a>`:''}</div>
+      </div>`).join('')}
+    <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0">`:'';
+  const catHtml=(WK.categories||[]).filter(c=>c.count>0).map(c=>`
+    <div style="margin-bottom:22px">
+      <div style="font-size:16px;font-weight:700;border-bottom:2px solid #e2e8f0;padding-bottom:6px;margin-bottom:12px">${c.icon||''} ${esc(c.name)}</div>
+      ${c.items.map(it=>`
+        <div style="margin-bottom:14px">
+          <div style="font-size:11px;color:#94a3b8">${esc(it.source||'')} · ${(it.pub_date||'').slice(0,10)}</div>
+          <div style="font-weight:700;font-size:14px;margin:2px 0"><a href="${esc(it.link||'#')}" style="color:#1e293b;text-decoration:none">${esc(it.title||'')}</a></div>
+          ${it.ai_summary?`<div style="font-size:13px;color:#475569;white-space:pre-wrap;line-height:1.6">${esc(it.ai_summary)}</div>`:''}
+          ${it.ai_comment?`<div style="background:#fef9c3;border-radius:6px;padding:5px 10px;margin-top:5px;font-size:12px;color:#92400e">💬 <b>S&amp;I Insight:</b> ${esc(it.ai_comment)}</div>`:''}
+        </div>`).join('')}
+    </div>`).join('');
+  return `<div style="max-width:680px;margin:0 auto;font-family:'Noto Sans KR',sans-serif;color:#1e293b;padding:20px">
+    <div style="text-align:center;margin-bottom:24px">
+      <div style="font-size:22px;font-weight:800">S&amp;I Weekly Newsletter</div>
+      <div style="font-size:12px;color:#64748b;margin-top:4px">${esc(WK.date_from||'')} ~ ${esc(WK.date_to||'')}</div>
+    </div>
+    ${hlHtml}${catHtml}
+    <div style="text-align:center;font-size:11px;color:#94a3b8;margin-top:30px;border-top:1px solid #e2e8f0;padding-top:14px">S&amp;I Corporation · CRE News Curation</div>
+  </div>`;
+}
+function copyNewsletterHtml(){
+  const html=buildNewsletterHtml(); if(!html){ toast('결과가 없습니다'); return; }
+  navigator.clipboard.writeText(html).then(()=>toast('📋 뉴스레터 HTML 복사 완료')).catch(()=>toast('복사 실패 — 미리보기에서 직접 복사하세요'));
+}
+function previewNewsletter(){
+  const html=buildNewsletterHtml(); if(!html){ toast('결과가 없습니다'); return; }
+  const w=window.open('','_blank'); w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>S&I Weekly Preview</title></head><body style="background:#f1f5f9;margin:0;padding:20px">'+html+'</body></html>'); w.document.close();
+}
+
+// ============ 모달 오버레이 클릭 닫기 ============
+document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',()=>o.classList.remove('active')));
+
+// ============ 초기화 ============
+function setDefaultWeek(){
+  const to=new Date(), from=new Date(); from.setDate(to.getDate()-6);
+  const fmt=d=>d.toISOString().slice(0,10);
+  $('#wkTo').value=fmt(to); $('#wkFrom').value=fmt(from);
+}
+(function init(){
+  setDefaultWeek();
+  updateCatBadge();
+  updatePromptBadge();
+  loadPool();
+  // 이미 만들어진 주간 결과가 있으면 보여줌
+  fetch('/data/weekly_news.json?_='+Date.now()).then(r=>r.ok?r.json():null).then(d=>{ if(d&&(d.categories||d.highlights)){ WK=d; $('#emptyResult').style.display='none'; $('#resultCard').style.display='block'; $('#resultRange').textContent=d.date_from?`(${d.date_from} ~ ${d.date_to} · 풀 ${d.pool_size||0}건)`:''; renderHighlights(); renderCategories(); } }).catch(()=>{});
+})();
+</script>
+</body>
+</html>

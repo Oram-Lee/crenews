@@ -103,6 +103,7 @@ def _make_job_state():
 _jobs = {
     'news':       _make_job_state(),
     'indicators': _make_job_state(),
+    'weekly':     _make_job_state(),
 }
 _jobs_lock = threading.Lock()
 
@@ -358,6 +359,29 @@ def collect_news():
     days      = body.get('days', 3)
     category  = body.get('category', '')
 
+    # ⭐ 런타임 오버라이드 기록 — 프런트(localStorage)에서 보낸
+    #    키워드 검색어 교체 + 매체 공신력 조정을 파일로 남겨 collect_news.py에 전달.
+    #    (데이터가 커서 CLI 인자로 못 넘기므로 파일 경유)
+    overrides = {
+        'keyword_override': bool(body.get('keyword_override', False)),
+        'keywords':         body.get('keywords') or {},
+        'source_authority': body.get('source_authority') or {},
+        'source_domains':   body.get('source_domains') or {},
+        'prompt_global':     body.get('prompt_global') or '',
+        'prompt_categories': body.get('prompt_categories') or {},
+    }
+    ov_path = os.path.join(BASE_DIR, 'data', 'run_overrides.json')
+    try:
+        os.makedirs(os.path.join(BASE_DIR, 'data'), exist_ok=True)
+        with open(ov_path, 'w', encoding='utf-8') as f:
+            json.dump(overrides, f, ensure_ascii=False)
+        kw_on  = overrides['keyword_override']
+        sa_cnt = len(overrides['source_authority'])
+        sd_cnt = len(overrides['source_domains'])
+        print(f"[news] 🔧 오버라이드 기록: 키워드교체={kw_on}, 공신력조정={sa_cnt}개, 도메인등록={sd_cnt}개", flush=True)
+    except Exception as e:
+        print(f"[news] ⚠️ 오버라이드 기록 실패: {e}", flush=True)
+
     cmd = [sys.executable, '-u', script]
     if date_from and date_to:
         cmd += ['--from-date', date_from, '--to-date', date_to]
@@ -365,6 +389,7 @@ def collect_news():
         cmd += ['--days', str(days)]
     if category:
         cmd += ['--category', category]
+    cmd += ['--overrides', ov_path]
 
     threading.Thread(
         target=_run_job, args=('news', cmd), daemon=True
@@ -375,6 +400,101 @@ def collect_news():
         'job':     'news',
         'message': '백그라운드 수집 시작됨 — /api/job/status?job=news 폴링하세요',
     }), 202
+
+
+# ─────────────────────────────────────────────
+#  ⭐ 라우트: 하이브리드 위클리 (수집전용 풀 / 주간 큐레이션 / 풀 현황)
+# ─────────────────────────────────────────────
+def _write_run_overrides(body: dict) -> str:
+    """프런트 오버라이드(키워드·공신력·도메인·프롬프트·활성카테고리)를 파일로 기록."""
+    overrides = {
+        'keyword_override':   bool(body.get('keyword_override', False)),
+        'keywords':           body.get('keywords') or {},
+        'source_authority':   body.get('source_authority') or {},
+        'source_domains':     body.get('source_domains') or {},
+        'prompt_global':      body.get('prompt_global') or '',
+        'prompt_categories':  body.get('prompt_categories') or {},
+        'enabled_categories': body.get('enabled_categories') or [],
+    }
+    ov_path = os.path.join(BASE_DIR, 'data', 'run_overrides.json')
+    os.makedirs(os.path.join(BASE_DIR, 'data'), exist_ok=True)
+    with open(ov_path, 'w', encoding='utf-8') as f:
+        json.dump(overrides, f, ensure_ascii=False)
+    return ov_path
+
+
+@app.route('/api/weekly/collect', methods=['POST'])
+def weekly_collect():
+    """매일 호출용: 수집 전용 → 주간 풀 누적 (LLM 미사용 → 사실상 무료)."""
+    script = os.path.join(BASE_DIR, 'collect_news.py')
+    if not os.path.exists(script):
+        return jsonify({'error': 'collect_news.py 없음'}), 404
+    with _jobs_lock:
+        if _jobs['weekly']['running']:
+            return jsonify({'error': '이미 실행 중', 'job': 'weekly', 'running': True}), 409
+    body = request.get_json(silent=True) or {}
+    try:
+        ov_path = _write_run_overrides(body)
+    except Exception as e:
+        ov_path = None
+        print(f"[weekly] ⚠️ 오버라이드 기록 실패: {e}", flush=True)
+    cmd = [sys.executable, '-u', script, '--mode', 'collect']
+    if body.get('date_from') and body.get('date_to'):
+        cmd += ['--from-date', body['date_from'], '--to-date', body['date_to']]
+    else:
+        cmd += ['--days', str(body.get('days', 1))]
+    if ov_path:
+        cmd += ['--overrides', ov_path]
+    threading.Thread(target=_run_job, args=('weekly', cmd), daemon=True).start()
+    return jsonify({'started': True, 'job': 'weekly',
+                    'message': '일일 수집(풀 누적) 시작 — /api/job/status?job=weekly'}), 202
+
+
+@app.route('/api/weekly/curate', methods=['POST'])
+def weekly_curate():
+    """주간 큐레이션 + 하이라이트 (풀 기간 추출 → 2단 선별 → AI 요약 → 하이라이트)."""
+    script = os.path.join(BASE_DIR, 'collect_news.py')
+    if not os.path.exists(script):
+        return jsonify({'error': 'collect_news.py 없음'}), 404
+    with _jobs_lock:
+        if _jobs['weekly']['running']:
+            return jsonify({'error': '이미 실행 중', 'job': 'weekly', 'running': True}), 409
+    body = request.get_json(silent=True) or {}
+    try:
+        ov_path = _write_run_overrides(body)
+    except Exception as e:
+        ov_path = None
+        print(f"[weekly] ⚠️ 오버라이드 기록 실패: {e}", flush=True)
+    cmd = [sys.executable, '-u', script, '--mode', 'weekly', '--top', str(int(body.get('top', 5)))]
+    if body.get('date_from') and body.get('date_to'):
+        cmd += ['--from-date', body['date_from'], '--to-date', body['date_to']]
+    else:
+        cmd += ['--days', str(body.get('days', 7))]
+    if ov_path:
+        cmd += ['--overrides', ov_path]
+    threading.Thread(target=_run_job, args=('weekly', cmd), daemon=True).start()
+    return jsonify({'started': True, 'job': 'weekly',
+                    'message': '주간 큐레이션 시작 — /api/job/status?job=weekly'}), 202
+
+
+@app.route('/api/weekly/pool')
+def weekly_pool():
+    """주간 풀 현황 (총 건수·일자별·카테고리별)."""
+    pool_path = os.path.join(BASE_DIR, 'data', 'weekly_pool.json')
+    try:
+        with open(pool_path, encoding='utf-8') as f:
+            pool = json.load(f)
+    except Exception:
+        return jsonify({'total': 0, 'updated_at': None, 'by_date': {}, 'by_category': {}})
+    items = pool.get('items', [])
+    by_date, by_cat = {}, {}
+    for it in items:
+        d = it.get('collected_at') or (it.get('pub_date', '')[:10]) or '미상'
+        by_date[d] = by_date.get(d, 0) + 1
+        c = it.get('category_name') or it.get('category') or '미상'
+        by_cat[c] = by_cat.get(c, 0) + 1
+    return jsonify({'total': len(items), 'updated_at': pool.get('updated_at'),
+                    'by_date': dict(sorted(by_date.items())), 'by_category': by_cat})
 
 
 # ─────────────────────────────────────────────
