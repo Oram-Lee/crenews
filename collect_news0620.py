@@ -1341,26 +1341,6 @@ _PORTAL_FALLBACK_SOURCES = {"Google News", "Google뉴스", "네이버뉴스", ""
 #   0 으로 두면 공신력은 정렬에 영향 없음(중복 보존에만 사용). 키울수록 영향 ↑.
 AUTHORITY_RANK_WEIGHT = 0.01
 
-# 저공신력 매체 하드 제외 임계값 (런타임 오버라이드로 주입, 0=미적용).
-#   filter_and_dedupe 에서 _source_authority(source) < 이 값 인 기사를 제외.
-AUTHORITY_MIN_SCORE = 0
-
-
-def _expand_combo(core: List[str], context: List[str], cap: int = 24) -> List[str]:
-    """키워드 OR 조합: (핵심 OR…) AND (맥락 OR…) 를 검색어로 펼친다.
-
-    네이버/구글은 불리언 연산자를 한 줄로 못 받으므로, 핵심×맥락 곱집합을
-    '핵심 맥락'(공백=AND) 쿼리로 전개하고, 그 합집합이 OR 효과를 낸다.
-    핵심·맥락 중 하나만 있으면 그 그룹 단독 사용. cap 으로 폭주 방지.
-    """
-    core = [c.strip() for c in (core or []) if str(c).strip()]
-    ctx  = [c.strip() for c in (context or []) if str(c).strip()]
-    if core and ctx:
-        out = [f"{a} {b}" for a in core for b in ctx]
-    else:
-        out = core or ctx
-    return out[:cap]
-
 
 def _source_authority(source: str) -> int:
     """매체 공신력 점수 반환 (미상은 기본값, 포털 폴백은 최하)."""
@@ -1455,7 +1435,7 @@ def apply_runtime_overrides(path: Optional[str]) -> None:
         print(f"  🌐 사이트 도메인 매핑 등록: {applied_sd}개")
 
     # ── 0.5) 프롬프트 지침 (공통 + 카테고리별) ───────────────────
-    global EXTRA_PROMPT_GLOBAL, ENABLED_CATEGORIES, AUTHORITY_MIN_SCORE
+    global EXTRA_PROMPT_GLOBAL, ENABLED_CATEGORIES
     pg = ov.get("prompt_global")
     if isinstance(pg, str):
         EXTRA_PROMPT_GLOBAL = pg.strip()
@@ -1484,13 +1464,6 @@ def apply_runtime_overrides(path: Optional[str]) -> None:
     if applied_sa:
         print(f"  ⚖️ 매체 공신력 오버라이드 적용: {applied_sa}개 매체")
 
-    # ── 1.5) 저공신력 매체 제외 임계값 ───────────────────────────
-    am = ov.get("authority_min")
-    if isinstance(am, (int, float)):
-        AUTHORITY_MIN_SCORE = max(0, min(100, int(am)))
-        if AUTHORITY_MIN_SCORE > 0:
-            print(f"  🚫 저공신력 제외 기준: {AUTHORITY_MIN_SCORE}점 미만 매체 제외")
-
     # ── 2) 키워드 → 검색어 교체 (toggle ON 일 때만) ──────────────
     if ov.get("keyword_override"):
         kw = ov.get("keywords") or {}
@@ -1507,21 +1480,6 @@ def apply_runtime_overrides(path: Optional[str]) -> None:
         if applied_kw:
             print(f"  🔧 키워드 오버라이드: {applied_kw}개 카테고리 검색어 교체 "
                   f"(noise 차단·AI 관련성 판단은 유지)")
-
-    # ── 3) 키워드 OR 조합 (핵심 × 맥락) — combo ON 일 때 우선 적용 ──
-    if ov.get("keyword_combo"):
-        groups = ov.get("keyword_groups") or {}
-        applied_cb = 0
-        for cat in ALL_CATEGORIES:
-            g = groups.get(cat["id"]) or {}
-            q = _expand_combo(g.get("core", []), g.get("context", []))
-            if q:
-                cat["search_queries"] = q
-                cat["rss_queries"]    = q
-                applied_cb += 1
-                print(f"     · [{cat['id']}] OR 조합 검색어 {len(q)}개 생성")
-        if applied_cb:
-            print(f"  🔗 키워드 OR 조합: {applied_cb}개 카테고리 (핵심×맥락 전개)")
         else:
             print("  ℹ️ keyword_override=True 이나 적용할 카테고리 키워드 없음 → 내장 검색어 사용")
 
@@ -1538,14 +1496,6 @@ def filter_and_dedupe(items: List[Dict], category: Dict,
     must_have = category["must_have_keywords"]
     # must_not은 BASE_MUST_NOT 기반의 명백한 비CRE 항목만 포함 (카테고리별 세부 목록은 AI가 판단)
     must_not  = category["must_not_keywords"]
-
-    # 0-A) 저공신력 매체 하드 제외 (옵션, AUTHORITY_MIN_SCORE>0 일 때만)
-    if AUTHORITY_MIN_SCORE > 0:
-        _before = len(items)
-        items = [it for it in items
-                 if _source_authority(it.get("source", "")) >= AUTHORITY_MIN_SCORE]
-        if _before != len(items):
-            print(f"  🚫 저공신력 제외(<{AUTHORITY_MIN_SCORE}점): {_before}→{len(items)}건")
 
     # 0) 공통 노이즈 제목 패턴 1차 차단 (주식 시황표, 채권 일정 등)
     def _is_noise_title(title: str) -> bool:

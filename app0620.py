@@ -369,9 +369,6 @@ def collect_news():
         'source_domains':   body.get('source_domains') or {},
         'prompt_global':     body.get('prompt_global') or '',
         'prompt_categories': body.get('prompt_categories') or {},
-        'keyword_combo':     bool(body.get('keyword_combo', False)),
-        'keyword_groups':    body.get('keyword_groups') or {},
-        'authority_min':     int(body.get('authority_min') or 0),
     }
     ov_path = os.path.join(BASE_DIR, 'data', 'run_overrides.json')
     try:
@@ -418,9 +415,6 @@ def _write_run_overrides(body: dict) -> str:
         'prompt_global':      body.get('prompt_global') or '',
         'prompt_categories':  body.get('prompt_categories') or {},
         'enabled_categories': body.get('enabled_categories') or [],
-        'keyword_combo':      bool(body.get('keyword_combo', False)),
-        'keyword_groups':     body.get('keyword_groups') or {},
-        'authority_min':      int(body.get('authority_min') or 0),
     }
     ov_path = os.path.join(BASE_DIR, 'data', 'run_overrides.json')
     os.makedirs(os.path.join(BASE_DIR, 'data'), exist_ok=True)

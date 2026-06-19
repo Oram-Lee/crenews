@@ -1844,45 +1844,6 @@ body {
     <div id="kwCatTabs" style="display:flex; gap:4px; padding:12px 20px 0; background:#f8fafc; border-bottom:1px solid var(--border); flex-shrink:0; overflow-x:auto; flex-wrap:nowrap;">
     </div>
 
-    <!-- ⭐ OR 조합 모드 토글 -->
-    <div style="padding:12px 20px; background:#ecfeff; border-bottom:1px solid var(--border); flex-shrink:0;">
-      <label style="display:flex; align-items:center; gap:9px; cursor:pointer;">
-        <input type="checkbox" id="kwComboToggle" checked onchange="setKwCombo(this.checked)"
-               style="width:18px; height:18px; flex-shrink:0; cursor:pointer; accent-color:#0891b2;">
-        <span style="font-size:.82rem; font-weight:700; color:#155e75; line-height:1.4;">🔗 OR 조합 사용
-          <span style="font-weight:500; color:#0e7490;">— 핵심(행위) × 맥락(대상)을 자동 조합해 검색어 생성. 권장 방식입니다.</span></span>
-      </label>
-    </div>
-
-    <!-- 조합 패널 (조합 ON 일 때) -->
-    <div id="kwComboPanel" style="flex:1; overflow-y:auto; padding:16px 20px;">
-      <div style="font-size:.74rem; color:#64748b; margin-bottom:12px; line-height:1.65;">
-        선택한 카테고리에 적용됩니다. 각 그룹은 <b>쉼표(,) 또는 줄바꿈</b>으로 구분하세요.
-        두 그룹이 <b>(핵심 OR …) AND (맥락 OR …)</b> 형태로 조합돼 검색됩니다.
-      </div>
-      <div style="margin-bottom:16px;">
-        <div style="font-size:.78rem; font-weight:700; color:#b91c1c; margin-bottom:6px;">핵심 그룹 · 행위
-          <span style="font-weight:500; color:#94a3b8;">(매각 · 인수 · 용적률 …)</span></div>
-        <textarea id="kwCoreInput" class="form-input" oninput="saveKwGroupCurrent()"
-          placeholder="매각, 인수, 매입"
-          style="width:100%; min-height:62px; resize:vertical; font-size:.84rem; line-height:1.7;"></textarea>
-      </div>
-      <div style="margin-bottom:12px;">
-        <div style="font-size:.78rem; font-weight:700; color:#1d4ed8; margin-bottom:6px;">맥락 그룹 · 대상
-          <span style="font-weight:500; color:#94a3b8;">(물류센터 · 호텔 · 빌딩 …)</span></div>
-        <textarea id="kwCtxInput" class="form-input" oninput="saveKwGroupCurrent()"
-          placeholder="물류센터, 호텔, 빌딩, 자산, 부지"
-          style="width:100%; min-height:62px; resize:vertical; font-size:.84rem; line-height:1.7;"></textarea>
-      </div>
-      <div id="kwComboCount" style="font-size:.8rem; font-weight:700; padding:9px 13px; border-radius:8px; background:#f1f5f9; color:#334155;"></div>
-      <div style="font-size:.7rem; color:#94a3b8; margin-top:8px; line-height:1.5;">
-        ※ "복합개발 · 세운지구"처럼 그 자체로 또렷한 고유명사는 <b>핵심 그룹에만</b> 넣고 맥락은 비워도 됩니다(단독 검색).
-      </div>
-    </div>
-
-    <!-- 단순 키워드 모드 (조합 OFF 일 때만 표시) -->
-    <div id="kwSinglePanel" style="display:contents;">
-
     <!-- 검색 바 -->
     <div style="padding:12px 20px; border-bottom:1px solid var(--border); flex-shrink:0; display:flex; gap:8px; align-items:center;">
       <div style="position:relative; flex:1; max-width:300px;">
@@ -1923,7 +1884,6 @@ body {
         </span>
       </label>
     </div>
-    </div><!-- /kwSinglePanel -->
 
     <!-- 푸터 -->
     <div class="modal-footer" style="flex-shrink:0; justify-content:space-between;">
@@ -1986,25 +1946,6 @@ body {
     <!-- 그룹 조정 영역 -->
     <div id="authGroupsArea" style="flex:1; overflow-y:auto; padding:8px 20px 16px;">
       <!-- 동적 렌더 -->
-    </div>
-
-    <!-- ⭐ 저공신력 매체 제외 -->
-    <div style="padding:13px 20px; border-top:1px solid var(--border); background:#fff7ed; flex-shrink:0;">
-      <label style="display:flex; align-items:center; gap:9px; cursor:pointer; margin-bottom:7px;">
-        <input type="checkbox" id="authExcludeToggle" onchange="setAuthExclude(this.checked)"
-               style="width:17px; height:17px; flex-shrink:0; cursor:pointer; accent-color:#ea580c;">
-        <span style="font-size:.8rem; font-weight:700; color:#9a3412;">🚫 저공신력 매체 제외
-          <span style="font-weight:500; color:#c2410c;">— 점수가 기준 미만인 매체 기사를 큐레이션에서 빼냅니다</span></span>
-      </label>
-      <div style="display:flex; align-items:center; gap:8px; font-size:.78rem; color:#9a3412; padding-left:26px;">
-        최소
-        <input type="number" id="authMinScore" min="0" max="100" value="25" onchange="setAuthMin(this.value)"
-               style="width:62px; height:28px; text-align:center; border:1px solid #fdba74; border-radius:6px; font-size:.8rem;">
-        점 미만 제외
-      </div>
-      <div style="font-size:.68rem; color:#c2410c; margin-top:7px; padding-left:26px; line-height:1.55;">
-        미등록 매체는 기본 <b>30점</b>, 포털 식별 실패는 <b>20점</b>입니다. 기준을 <b>35점 이상</b>으로 두면 위 목록에 없는 매체가 대부분 제외되니 주의하세요. <b>(권장 20~30점)</b>
-      </div>
     </div>
 
     <!-- 사이트 등록 (도메인 + 그룹 + 공신력) -->
@@ -3504,70 +3445,9 @@ function showKeywordModal() {
   updateKwBadge();
   const tog = document.getElementById('kwOverrideToggle');
   if (tog) tog.checked = getKeywordOverrideFlag();
-  // OR 조합 모드 초기화
-  const ct = document.getElementById('kwComboToggle');
-  if (ct) ct.checked = getKwCombo();
-  applyKwMode();
 }
 function hideKeywordModal() {
-  saveKwGroupCurrent();
   document.getElementById('keywordModal').classList.remove('active');
-}
-
-// ── ⭐ 키워드 OR 조합 (핵심 × 맥락) ──────────────────────────
-function getKwCombo() {
-  const v = localStorage.getItem('cre_keyword_combo');
-  return v === null ? true : v === '1';   // 기본 ON
-}
-function setKwCombo(on) {
-  localStorage.setItem('cre_keyword_combo', on ? '1' : '0');
-  applyKwMode();
-  updateKwBadge();
-}
-function loadKwGroups() {
-  try { return JSON.parse(localStorage.getItem('cre_keyword_groups') || '{}'); }
-  catch { return {}; }
-}
-function parseKwGroup(s) {
-  return (s || '').split(/[,\n]/).map(x => x.trim()).filter(Boolean);
-}
-function applyKwMode() {
-  const on = getKwCombo();
-  const combo  = document.getElementById('kwComboPanel');
-  const single = document.getElementById('kwSinglePanel');
-  if (combo)  combo.style.display  = on ? 'block' : 'none';
-  if (single) single.style.display = on ? 'none'  : 'contents';
-  if (on) renderKwCombo();
-}
-function renderKwCombo() {
-  const g = loadKwGroups()[kwActiveCat] || {};
-  const core = document.getElementById('kwCoreInput');
-  const ctx  = document.getElementById('kwCtxInput');
-  if (core) core.value = (g.core    || []).join(', ');
-  if (ctx)  ctx.value  = (g.context || []).join(', ');
-  updateComboCount();
-}
-function saveKwGroupCurrent() {
-  const core = document.getElementById('kwCoreInput');
-  const ctx  = document.getElementById('kwCtxInput');
-  if (!core || !ctx) return;
-  const all = loadKwGroups();
-  all[kwActiveCat] = { core: parseKwGroup(core.value), context: parseKwGroup(ctx.value) };
-  localStorage.setItem('cre_keyword_groups', JSON.stringify(all));
-  updateComboCount();
-  updateKwBadge();
-}
-function updateComboCount() {
-  const el = document.getElementById('kwComboCount');
-  if (!el) return;
-  const c = parseKwGroup((document.getElementById('kwCoreInput') || {}).value || '').length;
-  const m = parseKwGroup((document.getElementById('kwCtxInput')  || {}).value || '').length;
-  const n = (c && m) ? c * m : (c || m);
-  const over = n > 24;
-  el.style.background = over ? '#fef2f2' : '#ecfdf5';
-  el.style.color      = over ? '#b91c1c' : '#047857';
-  el.textContent = `핵심 ${c} × 맥락 ${m} = 검색어 ${n}개`
-    + (over ? '  ⚠️ 너무 많습니다 — 수집 시간↑ (24개 이하 권장)' : '');
 }
 
 // ── 카테고리 탭 렌더링 ────────────────────────────────────────
@@ -3579,7 +3459,7 @@ function renderKwCatTabs() {
     .map(([id, meta]) => {
       const cnt = (kw[id] || []).length;
       return `<button class="kw-cat-tab ${kwActiveCat === id ? 'active' : ''}"
-        onclick="saveKwGroupCurrent(); kwActiveCat='${id}'; renderKwCatTabs(); renderKeywordChips(); renderKwCombo();">
+        onclick="kwActiveCat='${id}'; renderKwCatTabs(); renderKeywordChips();">
         ${meta.icon} ${meta.label}
         <span class="kw-tab-count">${cnt}</span>
       </button>`;
@@ -3867,10 +3747,6 @@ function showAuthorityModal() {
   populateSiteGroupSelect();
   renderAuthorityGroups();
   updateAuthorityBadge();
-  const ex = document.getElementById('authExcludeToggle');
-  if (ex) ex.checked = getAuthExclude();
-  const mn = document.getElementById('authMinScore');
-  if (mn) mn.value = getAuthMin();
 }
 function hideAuthorityModal() {
   document.getElementById('authorityModal').classList.remove('active');
@@ -3885,12 +3761,7 @@ function renderAuthorityGroups() {
     const chips = tier.sources.map(s => {
       const sc = authScore(s);
       const isCh = s in ov;
-      const safe = s.replace(/'/g, "\\'");
-      return `<span style="display:inline-flex; align-items:center; gap:5px; background:${isCh?'#ede9fe':'#f1f5f9'}; border:1px solid ${isCh?'#c4b5fd':'#e2e8f0'}; font-size:.72rem; padding:3px 6px 3px 10px; border-radius:10px; margin:3px;">
-        <span style="color:${isCh?'#6d28d9':'#475569'}; font-weight:${isCh?'700':'500'};">${s}</span>
-        <input type="number" min="0" max="100" value="${sc}" title="이 매체 점수 직접 편집"
-               onchange="setMediaScore('${safe}', this.value)"
-               style="width:46px; height:22px; text-align:center; border:1px solid #cbd5e1; border-radius:5px; font-size:.72rem; ${isCh?'color:#6d28d9; font-weight:700; background:#fff;':''}"></span>`;
+      return `<span style="display:inline-flex; align-items:center; gap:4px; background:${isCh?'#ede9fe':'#f1f5f9'}; color:${isCh?'#6d28d9':'#475569'}; font-size:.72rem; padding:3px 9px; border-radius:10px; margin:2px;">${s}<b>${sc}</b></span>`;
     }).join('');
     return `
       <div style="border:1px solid ${changed?'#c4b5fd':'#e2e8f0'}; border-radius:10px; padding:12px 14px; margin:10px 0; background:${changed?'#faf5ff':'#fff'};">
@@ -3957,34 +3828,6 @@ function bumpGroupScore(tierId, delta) {
   if (!tier) return;
   setGroupScore(tierId, authScore(tier.sources[0]) + delta);
 }
-// 개별 매체 점수 직접 편집 (재렌더 안 함 — 입력 포커스 유지)
-function setMediaScore(media, val) {
-  let score = parseInt(val, 10);
-  if (isNaN(score)) return;
-  score = Math.max(0, Math.min(100, score));
-  const ov = loadAuthority();
-  ov[media] = score;
-  saveAuthorityMap(ov);
-}
-
-// ── ⭐ 저공신력 매체 제외 ─────────────────────────────────────
-function getAuthExclude() { return localStorage.getItem('cre_authority_exclude') === '1'; }
-function getAuthMin() {
-  const v = parseInt(localStorage.getItem('cre_authority_min') || '25', 10);
-  return isNaN(v) ? 25 : Math.max(0, Math.min(100, v));
-}
-function setAuthExclude(on) {
-  localStorage.setItem('cre_authority_exclude', on ? '1' : '0');
-  updateAuthorityBadge();
-}
-function setAuthMin(val) {
-  let v = parseInt(val, 10);
-  if (isNaN(v)) v = 25;
-  v = Math.max(0, Math.min(100, v));
-  localStorage.setItem('cre_authority_min', String(v));
-}
-// 수집에 보낼 값: 토글 OFF면 0(제외 안 함)
-function authorityMinForCollect() { return getAuthExclude() ? getAuthMin() : 0; }
 
 function addSite() {
   const name   = (document.getElementById('siteName').value || '').trim();
@@ -4111,23 +3954,11 @@ function getCollectOverrides() {
   const catsRaw = loadPromptCats();
   const promptCats = {};
   Object.keys(catsRaw).forEach(k => { if ((catsRaw[k]||'').trim()) promptCats[k] = catsRaw[k].trim(); });
-  // OR 조합: 비어있지 않은 그룹만 전송
-  const groupsRaw = loadKwGroups();
-  const groups = {};
-  Object.keys(groupsRaw).forEach(k => {
-    const g = groupsRaw[k] || {};
-    const core = (g.core || []).filter(Boolean);
-    const ctx  = (g.context || []).filter(Boolean);
-    if (core.length || ctx.length) groups[k] = { core, context: ctx };
-  });
   return {
     keyword_override: kwOn,
     keywords:         kwOn ? loadKeywords() : {},
-    keyword_combo:     getKwCombo(),
-    keyword_groups:    groups,
     source_authority: authority,
     source_domains:   domains,
-    authority_min:     authorityMinForCollect(),
     prompt_global:     loadPromptGlobal().trim(),
     prompt_categories: promptCats,
   };

@@ -324,18 +324,9 @@ function getOverrides(){
   jget('cre_sites',[]).forEach(s=>{ authority[s.name]=s.score; domains[s.domain]=s.name; });
   const catsRaw = loadPromptCats(); const promptCats={};
   Object.keys(catsRaw).forEach(k=>{ if((catsRaw[k]||'').trim()) promptCats[k]=catsRaw[k].trim(); });
-  // OR 조합 (index.html과 키 공유)
-  const comboV=ls('cre_keyword_combo'); const combo = comboV===null?true:comboV==='1';
-  const groupsRaw=jget('cre_keyword_groups',{}); const groups={};
-  Object.keys(groupsRaw).forEach(k=>{ const g=groupsRaw[k]||{}; const core=(g.core||[]).filter(Boolean); const ctx=(g.context||[]).filter(Boolean); if(core.length||ctx.length) groups[k]={core,context:ctx}; });
-  // 저공신력 제외
-  const exOn=ls('cre_authority_exclude')==='1';
-  const minV=parseInt(ls('cre_authority_min')||'25',10);
-  const authMin = exOn ? (isNaN(minV)?25:Math.max(0,Math.min(100,minV))) : 0;
   return {
     keyword_override:kwOn, keywords: kwOn?jget('cre_keywords',{}):{},
-    keyword_combo:combo, keyword_groups:groups,
-    source_authority:authority, source_domains:domains, authority_min:authMin,
+    source_authority:authority, source_domains:domains,
     prompt_global:(ls('cre_prompt_global')||'').trim(), prompt_categories:promptCats,
     enabled_categories:getEnabledCats(),
   };
