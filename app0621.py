@@ -421,7 +421,6 @@ def _write_run_overrides(body: dict) -> str:
         'keyword_combo':      bool(body.get('keyword_combo', False)),
         'keyword_groups':     body.get('keyword_groups') or {},
         'authority_min':      int(body.get('authority_min') or 0),
-        'category_caps':      body.get('category_caps') or {},
     }
     ov_path = os.path.join(BASE_DIR, 'data', 'run_overrides.json')
     os.makedirs(os.path.join(BASE_DIR, 'data'), exist_ok=True)

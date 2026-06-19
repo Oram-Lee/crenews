@@ -1455,7 +1455,7 @@ def apply_runtime_overrides(path: Optional[str]) -> None:
         print(f"  🌐 사이트 도메인 매핑 등록: {applied_sd}개")
 
     # ── 0.5) 프롬프트 지침 (공통 + 카테고리별) ───────────────────
-    global EXTRA_PROMPT_GLOBAL, ENABLED_CATEGORIES, AUTHORITY_MIN_SCORE, WEEKLY_CAP_RUNTIME
+    global EXTRA_PROMPT_GLOBAL, ENABLED_CATEGORIES, AUTHORITY_MIN_SCORE
     pg = ov.get("prompt_global")
     if isinstance(pg, str):
         EXTRA_PROMPT_GLOBAL = pg.strip()
@@ -1490,19 +1490,6 @@ def apply_runtime_overrides(path: Optional[str]) -> None:
         AUTHORITY_MIN_SCORE = max(0, min(100, int(am)))
         if AUTHORITY_MIN_SCORE > 0:
             print(f"  🚫 저공신력 제외 기준: {AUTHORITY_MIN_SCORE}점 미만 매체 제외")
-
-    # ── 1.6) 카테고리별 큐레이션 개수 (위클리) ──────────────────
-    cc = ov.get("category_caps")
-    if isinstance(cc, dict) and cc:
-        parsed = {}
-        for k, v in cc.items():
-            try:
-                parsed[str(k)] = max(1, min(200, int(v)))
-            except (TypeError, ValueError):
-                continue
-        if parsed:
-            WEEKLY_CAP_RUNTIME = parsed
-            print(f"  🔢 카테고리별 큐레이션 개수: {WEEKLY_CAP_RUNTIME}")
 
     # ── 2) 키워드 → 검색어 교체 (toggle ON 일 때만) ──────────────
     if ov.get("keyword_override"):
@@ -2628,15 +2615,10 @@ WEEKLY_OUT_PATH  = "data/weekly_news.json"
 WEEKLY_PER_CATEGORY_AI_CAP = 40          # 2단 선별: 카테고리당 큐레이션 상한 (기본)
 # 카테고리별 예외 — 기업 공간 전략은 기사량이 적어 20개
 WEEKLY_CAP_BY_CATEGORY = {"corporate_space": 20}
-# UI에서 주입하는 카테고리별 개수 (런타임 오버라이드, 비어있으면 위 기본값 사용)
-WEEKLY_CAP_RUNTIME: Dict[str, int] = {}
 
 
 def _weekly_cap(cat_id: str) -> int:
-    """위클리 카테고리당 큐레이션 개수(룰랭킹 투입·AI 출력 공통).
-    런타임 오버라이드 > 카테고리별 기본 예외 > 전역 기본 순."""
-    if cat_id in WEEKLY_CAP_RUNTIME:
-        return WEEKLY_CAP_RUNTIME[cat_id]
+    """위클리 카테고리당 큐레이션 개수(룰랭킹 투입·AI 출력 공통)."""
     return WEEKLY_CAP_BY_CATEGORY.get(cat_id, WEEKLY_PER_CATEGORY_AI_CAP)
 ENABLED_CATEGORIES: Optional[List[str]] = None   # overrides로 주입 (None=전체)
 
