@@ -2742,12 +2742,6 @@ JSON 배열만 출력(코드블록·설명 없이). 각 항목:
     if config.CLAUDE_API_KEY:
         try:
             import anthropic
-            CLAUDE_MODELS = list(dict.fromkeys([
-                config.CLAUDE_SUMMARY_MODEL,   # claude-sonnet-4-6 (통합 기본)
-                "claude-sonnet-4-5",
-                "claude-3-5-sonnet-20241022",
-                config.CLAUDE_MODEL,           # Haiku 최후 폴백
-            ]))
             client = anthropic.Anthropic(api_key=config.CLAUDE_API_KEY)
             for model_name in CLAUDE_MODELS:
                 try:
@@ -2766,12 +2760,6 @@ JSON 배열만 출력(코드블록·설명 없이). 각 항목:
         try:
             import google.generativeai as genai
             genai.configure(api_key=config.GEMINI_API_KEY)
-            GEMINI_MODELS = list(dict.fromkeys([
-                config.GEMINI_MODEL,
-                "gemini-2.0-flash-lite",
-                "gemini-1.5-flash-002",
-                "gemini-1.5-flash-001",
-            ]))
             for model_name in GEMINI_MODELS:
                 try:
                     gm = genai.GenerativeModel(model_name)
