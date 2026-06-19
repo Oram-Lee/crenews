@@ -153,11 +153,10 @@ input,select,textarea{font-family:inherit}
       <div class="hint">매일 돌려 기사를 <b>주간 풀</b>에 누적합니다(중복 자동 제거, 14일 경과분 정리). 요약은 안 하고 수집만 합니다.</div>
       <div class="step-row">
         <span class="step-tag">STEP 1</span>
-        <span style="font-size:.8rem;color:var(--text-secondary)">기간</span>
-        <input class="inp" type="date" id="wkColFrom">
-        <span style="color:var(--text-muted)">~</span>
-        <input class="inp" type="date" id="wkColTo">
-        <button class="btn btn-primary" id="btnCollect" onclick="collectDaily()">수집 실행</button>
+        <span style="font-size:.8rem;color:var(--text-secondary)">최근</span>
+        <input class="inp num" type="number" id="wkCollectDays" value="1" min="1" max="7">
+        <span style="font-size:.8rem;color:var(--text-secondary)">일치 수집</span>
+        <button class="btn btn-primary" id="btnCollect" onclick="collectDaily()">오늘 수집 실행</button>
         <button class="btn btn-outline btn-sm" onclick="loadPool()">풀 새로고침</button>
       </div>
       <div class="log" id="collectLog"></div>
@@ -368,9 +367,7 @@ async function postAndPoll(url, body, logSel, onDone, btnSel){
   },1200);
 }
 function collectDaily(){
-  const from=$('#wkColFrom').value, to=$('#wkColTo').value;
-  if(!from||!to){ toast('⚠️ 수집 기간을 선택하세요'); return; }
-  postAndPoll('/api/weekly/collect',{date_from:from,date_to:to,...getOverrides()},'#collectLog',loadPool,'#btnCollect');
+  postAndPoll('/api/weekly/collect',{days:+($('#wkCollectDays').value||1),...getOverrides()},'#collectLog',loadPool,'#btnCollect');
 }
 function runWeekly(){
   const from=$('#wkFrom').value, to=$('#wkTo').value;
@@ -496,10 +493,6 @@ function setDefaultWeek(){
   const to=new Date(), from=new Date(); from.setDate(to.getDate()-6);
   const fmt=d=>d.toISOString().slice(0,10);
   $('#wkTo').value=fmt(to); $('#wkFrom').value=fmt(from);
-  // STEP1 수집: 기본 오늘~오늘 (필요 시 기간 확장)
-  const t=fmt(new Date());
-  if($('#wkColTo'))   $('#wkColTo').value=t;
-  if($('#wkColFrom')) $('#wkColFrom').value=t;
 }
 (function init(){
   setDefaultWeek();

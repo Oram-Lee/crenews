@@ -2219,10 +2219,9 @@ def _apply_combined_results(batch: List[Dict], results: List[Dict],
 
 
 def ai_curate(config: NewsConfig, news_items: List[Dict],
-              category: Dict, max_out: Optional[int] = None) -> List[Dict]:
+              category: Dict) -> List[Dict]:
     """Claude Sonnet 단일 호출로 선별+요약 동시 처리.
-    Claude 실패 시 Gemini 폴백, 모두 실패 시 rule-based fallback + AI 요약.
-    max_out: 카테고리당 출력 상한(미지정 시 config.MAX_NEWS_PER_CATEGORY)."""
+    Claude 실패 시 Gemini 폴백, 모두 실패 시 rule-based fallback + AI 요약."""
     if not news_items:
         return []
 
@@ -2603,8 +2602,7 @@ def collect_category(config: NewsConfig, category: Dict,
         item["category_icon"] = category["icon"]
         item.pop("relevance_score", None)
 
-    _cap = max_out if isinstance(max_out, int) and max_out > 0 else config.MAX_NEWS_PER_CATEGORY
-    return curated[:_cap]
+    return curated[:config.MAX_NEWS_PER_CATEGORY]
 
 
 # ================================================================
@@ -2612,14 +2610,7 @@ def collect_category(config: NewsConfig, category: Dict,
 # ================================================================
 WEEKLY_POOL_PATH = "data/weekly_pool.json"
 WEEKLY_OUT_PATH  = "data/weekly_news.json"
-WEEKLY_PER_CATEGORY_AI_CAP = 40          # 2단 선별: 카테고리당 큐레이션 상한 (기본)
-# 카테고리별 예외 — 기업 공간 전략은 기사량이 적어 20개
-WEEKLY_CAP_BY_CATEGORY = {"corporate_space": 20}
-
-
-def _weekly_cap(cat_id: str) -> int:
-    """위클리 카테고리당 큐레이션 개수(룰랭킹 투입·AI 출력 공통)."""
-    return WEEKLY_CAP_BY_CATEGORY.get(cat_id, WEEKLY_PER_CATEGORY_AI_CAP)
+WEEKLY_PER_CATEGORY_AI_CAP = 25          # 2단 선별: 카테고리당 AI 투입 상한
 ENABLED_CATEGORIES: Optional[List[str]] = None   # overrides로 주입 (None=전체)
 
 
@@ -2819,10 +2810,9 @@ def run_weekly(config: NewsConfig, date_from: datetime, date_to: datetime,
             all_categories_output.append({"id": category["id"], "name": category["name"],
                 "icon": category["icon"], "label": category["label"], "count": 0, "items": []})
             continue
-        cap = _weekly_cap(category["id"])
-        ranked = _rule_rank(cat_items)[:cap]
-        print(f"\n[{category['icon']} {category['name']}] 풀 {len(cat_items)} → AI 투입 {len(ranked)} (상한 {cap})")
-        curated = ai_curate(config, ranked, category, max_out=cap)
+        ranked = _rule_rank(cat_items)[:WEEKLY_PER_CATEGORY_AI_CAP]
+        print(f"\n[{category['icon']} {category['name']}] 풀 {len(cat_items)} → AI 투입 {len(ranked)}")
+        curated = ai_curate(config, ranked, category)
         curated.sort(key=lambda x: (x.get("pub_date") or ""), reverse=True)
         for i, it in enumerate(curated):
             it["rank"] = i + 1
@@ -2830,7 +2820,7 @@ def run_weekly(config: NewsConfig, date_from: datetime, date_to: datetime,
             it["category_name"] = category["name"]
             it["category_icon"] = category["icon"]
             it.pop("relevance_score", None)
-        curated = curated[:cap]
+        curated = curated[:config.MAX_NEWS_PER_CATEGORY]
         all_categories_output.append({"id": category["id"], "name": category["name"],
             "icon": category["icon"], "label": category["label"],
             "count": len(curated), "items": curated})
