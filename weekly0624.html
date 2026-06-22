@@ -282,15 +282,9 @@ function closeModal(id){ document.getElementById(id).classList.remove('active');
 // ============ 오버라이드 (index.html과 동일 스키마 + enabled_categories + category_caps) ============
 function getOverrides(){
   const kwOn = ls('cre_keyword_override')==='1';
-  // 매체 공신력: 통합 모델(cre_media) 우선, 없으면 레거시(cre_authority+cre_sites)
-  let authority={}, domains={};
-  const _media=jget('cre_media',null);
-  if(Array.isArray(_media)){
-    _media.forEach(m=>{ const sc=Math.max(0,Math.min(100,parseInt(m.score,10)||0)); if(m.name)authority[m.name]=sc; if(m.match&&m.match!==m.name)authority[m.match]=sc; if(m.domain)domains[m.domain]=m.name||m.match; });
-  } else {
-    authority={...jget('cre_authority',{})};
-    jget('cre_sites',[]).forEach(s=>{ authority[s.name]=s.score; domains[s.domain]=s.name; });
-  }
+  const authority = {...jget('cre_authority',{})};
+  const domains = {};
+  jget('cre_sites',[]).forEach(s=>{ authority[s.name]=s.score; domains[s.domain]=s.name; });
   const catsRaw = loadPromptCats(); const promptCats={};
   Object.keys(catsRaw).forEach(k=>{ if((catsRaw[k]||'').trim()) promptCats[k]=catsRaw[k].trim(); });
   // OR 조합 (index.html과 키 공유)

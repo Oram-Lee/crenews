@@ -1155,67 +1155,27 @@ def _build_rss_url(query: str) -> str:
     )
 
 
-# ── Google News RSS 공통 헤더/쿠키/재시도 ───────────────────────────
-#   데이터센터(Render) IP에서 Google이 consent 차단·일시 throttle(503/429)을
-#   거는 경우가 많아, 브라우저 유사 헤더 + consent 우회 쿠키 + 지수 백오프 재시도로 완화.
-RSS_HEADERS = {
-    "User-Agent": (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/122.0.0.0 Safari/537.36"
-    ),
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-    "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
-    "Cache-Control": "no-cache",
-    "Pragma": "no-cache",
-}
-# Google consent wall 우회 (consent.google.com 리다이렉트/차단 방지)
-RSS_COOKIES = {
-    "CONSENT": "YES+cb.20210720-07-p0.en+FX+410",
-    "SOCS": "CAISHAgBEhJnd3NfMjAyMzA4MTAtMF9SQzEaAmtvIAEaBgiAo_CmBg",
-}
-
-
-def _google_rss_get(url: str, timeout: int = 20, attempts: int = 3):
-    """Google RSS GET — 200이면 반환, 5xx/429는 지수 백오프 재시도.
-    모두 실패하면 마지막 응답(없으면 None) 반환. 예외도 재시도."""
-    delay = 1.2
-    resp = None
-    for i in range(attempts):
-        try:
-            resp = requests.get(url, headers=RSS_HEADERS, cookies=RSS_COOKIES,
-                                timeout=timeout, verify=False)
-            if resp.status_code == 200:
-                return resp
-            if resp.status_code in (429, 500, 502, 503, 504) and i < attempts - 1:
-                time.sleep(delay)
-                delay *= 2
-                continue
-            return resp
-        except requests.RequestException:
-            if i < attempts - 1:
-                time.sleep(delay)
-                delay *= 2
-                continue
-            return None
-    return resp
-
-
 def fetch_google_rss(queries: List[str],
                      date_from: datetime, date_to: datetime) -> List[Dict]:
     """Google News RSS 수집 — API 키 불필요, pubDate 항상 포함"""
     all_items:   List[Dict] = []
     seen_hashes: set        = set()
 
-    for qi, query in enumerate(queries):
-        if qi:
-            time.sleep(0.4)   # 쿼리 간 간격 — throttle 유발 완화
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/122.0.0.0 Safari/537.36"
+        ),
+        "Accept-Language": "ko-KR,ko;q=0.9",
+    }
+
+    for query in queries:
         url = _build_rss_url(query)
         try:
-            resp = _google_rss_get(url)
-            if resp is None or resp.status_code != 200:
-                code = resp.status_code if resp is not None else 'ERR'
-                print(f"  ⚠️ RSS HTTP {code}: {query[:30]} (재시도 후)")
+            resp = requests.get(url, headers=headers, timeout=20, verify=False)
+            if resp.status_code != 200:
+                print(f"  ⚠️ RSS HTTP {resp.status_code}: {query[:30]}")
                 time.sleep(0.5)
                 continue
 
@@ -3001,19 +2961,20 @@ def main():
     print(f"🔌 Google News RSS 연결 테스트...")
     try:
         test_url = _build_rss_url("오피스 공실률")
-        test = _google_rss_get(test_url, timeout=10, attempts=2)
-        if test is None:
-            print(f"  Google RSS: ❌ 연결 실패 (네트워크)")
-        else:
-            print(f"  Google RSS: HTTP {test.status_code} "
-                  f"{'✅' if test.status_code == 200 else '❌ (Naver로 대체 진행)'}")
-            if test.status_code == 200:
-                try:
-                    root  = ET.fromstring(test.content)
-                    cnt   = len(root.findall('.//item'))
-                    print(f"  샘플 결과: {cnt}건")
-                except ET.ParseError:
-                    print(f"  XML 파싱 실패")
+        test = requests.get(
+            test_url,
+            headers={"User-Agent": "Mozilla/5.0"},
+            timeout=10, verify=False
+        )
+        print(f"  Google RSS: HTTP {test.status_code} "
+              f"{'✅' if test.status_code == 200 else '❌'}")
+        if test.status_code == 200:
+            try:
+                root  = ET.fromstring(test.content)
+                cnt   = len(root.findall('.//item'))
+                print(f"  샘플 결과: {cnt}건")
+            except ET.ParseError:
+                print(f"  XML 파싱 실패")
     except Exception as e:
         print(f"  Google RSS: ❌ {e}")
 

@@ -2007,22 +2007,22 @@ body {
       </div>
     </div>
 
-    <!-- 매체 추가 (카테고리 + 점수 + 선택적 도메인) -->
+    <!-- 사이트 등록 (도메인 + 그룹 + 공신력) -->
     <div style="padding:14px 20px; border-top:1px solid var(--border); background:#f8fafc; flex-shrink:0;">
       <div style="font-size:.72rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:8px;">
-        + 매체 추가 <span style="text-transform:none; font-weight:500; color:#94a3b8;">(고른 카테고리에 점수순으로 추가됩니다 · 도메인은 선택 — 입력 시 수집 때 그 매체로 인식)</span>
+        + 사이트 등록 <span style="text-transform:none; font-weight:500; color:#94a3b8;">(도메인을 등록하면 수집 시 그 매체로 인식되고 점수가 적용됩니다 — 블랙비트·SPI 등)</span>
       </div>
       <div style="display:grid; grid-template-columns:1.1fr 1.5fr 1.2fr 0.7fr auto; gap:8px; align-items:center;">
         <input type="text" id="siteName" class="form-input" placeholder="매체명 (예: 블랙비트)"
-               style="height:34px; font-size:.8rem;" onkeydown="if(event.key==='Enter') addMedia()">
-        <input type="text" id="siteDomain" class="form-input" placeholder="도메인 (선택, 예: blackbit.co.kr)"
-               style="height:34px; font-size:.8rem;" onkeydown="if(event.key==='Enter') addMedia()">
+               style="height:34px; font-size:.8rem;">
+        <input type="text" id="siteDomain" class="form-input" placeholder="도메인 (예: blackbit.co.kr)"
+               style="height:34px; font-size:.8rem;" onkeydown="if(event.key==='Enter') addSite()">
         <select id="siteGroup" class="form-input" style="height:34px; font-size:.78rem;" onchange="onSiteGroupChange()"></select>
         <input type="number" id="siteScore" class="form-input" placeholder="점수" min="0" max="100" value="45"
                style="height:34px; font-size:.8rem; text-align:center;">
-        <button class="btn btn-sm btn-primary" onclick="addMedia()" style="height:34px; padding:0 14px;">+ 추가</button>
+        <button class="btn btn-sm btn-primary" onclick="addSite()" style="height:34px; padding:0 14px;">+ 등록</button>
       </div>
-      <div style="font-size:.68rem; color:#94a3b8; margin-top:6px;">카테고리를 고르면 그 그룹 기본 점수가 자동 입력되며, 직접 수정할 수 있습니다. 도메인은 http·www 없이 입력해도 됩니다.</div>
+      <div style="font-size:.68rem; color:#94a3b8; margin-top:6px;">도메인은 http·www 없이 입력해도 됩니다. 그룹을 고르면 점수가 자동 채워지며, 직접 수정할 수 있습니다.</div>
     </div>
 
     <!-- 푸터 -->
@@ -3811,78 +3811,6 @@ const SOURCE_TIERS = [
   { id:'community', label:'CRE 정보 커뮤니티',    desc:'정보가치↑·대외 공신력↓',  sources:['블랙비트','BlackBit','SPI'] },
 ];
 
-// ================================================================
-//  ⭐ 매체 공신력 — 통합 편집 모델 (cre_media)
-//     모든 매체(기본+추가)를 하나의 리스트로 관리. 그룹 내 점수순 정렬.
-//     entry = { name(표시·편집), match(수집기 원본명·점수매칭키), group, score, domain(선택) }
-// ================================================================
-const MEDIA_KEY = 'cre_media';
-function defaultGroupOf(name){ const t = SOURCE_TIERS.find(t => t.sources.includes(name)); return t ? t.id : 'community'; }
-function defaultScoreOf(name){ return (name in SOURCE_DEFAULTS) ? SOURCE_DEFAULTS[name] : 30; }
-
-// 레거시(cre_authority + cre_sites)에서 1회 시드
-function seedMedia(){
-  let ovOld = {}, sitesOld = [];
-  try { ovOld = JSON.parse(localStorage.getItem('cre_authority') || '{}'); } catch (e) {}
-  try { sitesOld = JSON.parse(localStorage.getItem('cre_sites') || '[]'); } catch (e) {}
-  const media = [];
-  SOURCE_TIERS.forEach(t => t.sources.forEach(s => {
-    media.push({ name:s, match:s, group:t.id, score:(s in ovOld ? ovOld[s] : defaultScoreOf(s)), domain:'' });
-  }));
-  (Array.isArray(sitesOld) ? sitesOld : []).forEach(s => {
-    if (!s || !s.name) return;
-    const ex = media.find(m => m.name === s.name);
-    if (ex) { if (s.domain) ex.domain = s.domain; if (typeof s.score === 'number') ex.score = s.score; if (s.group) ex.group = s.group; }
-    else media.push({ name:s.name, match:s.name, group:(s.group || 'community'), score:(typeof s.score==='number'?s.score:45), domain:(s.domain || '') });
-  });
-  return media;
-}
-function loadMedia(){
-  const raw = localStorage.getItem(MEDIA_KEY);
-  if (raw === null) { const seeded = seedMedia(); localStorage.setItem(MEDIA_KEY, JSON.stringify(seeded)); return seeded; }
-  try { const a = JSON.parse(raw); return Array.isArray(a) ? a : seedMedia(); } catch (e) { return seedMedia(); }
-}
-function saveMedia(arr){ localStorage.setItem(MEDIA_KEY, JSON.stringify(arr)); updateAuthorityBadge(); }
-
-// 수집 전송용 맵 (매체명→점수, 도메인→매체명). 기본매체는 match 키로도 매칭 유지.
-function mediaMaps(){
-  const authority = {}, domains = {};
-  loadMedia().forEach(m => {
-    const sc = Math.max(0, Math.min(100, parseInt(m.score, 10) || 0));
-    if (m.name) authority[m.name] = sc;
-    if (m.match && m.match !== m.name) authority[m.match] = sc;
-    if (m.domain) domains[m.domain] = m.name || m.match;
-  });
-  return { authority, domains };
-}
-
-// ── CRUD ──
-function addMedia(){
-  const name  = (document.getElementById('siteName').value || '').trim();
-  let   domain = (document.getElementById('siteDomain').value || '').trim().toLowerCase();
-  const group = document.getElementById('siteGroup').value || 'community';
-  let   score = parseInt(document.getElementById('siteScore').value, 10);
-  if (!name) { showToast('⚠️ 매체명을 입력하세요'); return; }
-  if (isNaN(score)) score = 45;
-  score = Math.max(0, Math.min(100, score));
-  if (domain) domain = domain.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
-  const media = loadMedia();
-  const ex = media.find(m => m.name === name);
-  if (ex) { ex.group = group; ex.score = score; if (domain) ex.domain = domain; }
-  else media.push({ name, match: name, group, score, domain });
-  saveMedia(media);
-  document.getElementById('siteName').value = '';
-  document.getElementById('siteDomain').value = '';
-  renderAuthorityGroups();
-  const gl = (SOURCE_TIERS.find(t => t.id === group) || {}).label || group;
-  showToast(`✅ "${name}" 추가됨 · ${gl} · ${score}점`);
-}
-function editMediaName(idx, val){ const m = loadMedia(); if (!m[idx]) return; const v = (val||'').trim(); if (!v) { renderAuthorityGroups(); return; } m[idx].name = v; saveMedia(m); }
-function editMediaScore(idx, val){ const m = loadMedia(); if (!m[idx]) return; let s = parseInt(val,10); if (isNaN(s)) return; m[idx].score = Math.max(0, Math.min(100, s)); saveMedia(m); }
-function editMediaDomain(idx, val){ const m = loadMedia(); if (!m[idx]) return; let d = (val||'').trim().toLowerCase(); if (d) d = d.replace(/^https?:\/\//,'').replace(/^www\./,'').split('/')[0]; m[idx].domain = d; saveMedia(m); }
-function moveMedia(idx, groupId){ const m = loadMedia(); if (!m[idx]) return; m[idx].group = groupId; saveMedia(m); renderAuthorityGroups(); }
-function deleteMedia(idx){ const m = loadMedia(); if (!m[idx]) return; const nm = m[idx].name; m.splice(idx,1); saveMedia(m); renderAuthorityGroups(); showToast(`🗑️ "${nm}" 삭제됨 (수집기 기본 점수로 복귀)`); }
-
 // 오버라이드 맵 (매체명 → 점수). 사용자가 바꾼 것 + 직접 추가한 매체만 담김.
 function loadAuthority() {
   try { return JSON.parse(localStorage.getItem('cre_authority') || '{}'); }
@@ -3899,15 +3827,11 @@ function authScore(source) {
   return 30;
 }
 function updateAuthorityBadge() {
-  let media = null;
-  try { const a = JSON.parse(localStorage.getItem('cre_media') || 'null'); if (Array.isArray(a)) media = a; } catch (e) {}
-  let cnt;
-  if (media) cnt = media.filter(m => m.domain || (parseInt(m.score,10) !== defaultScoreOf(m.match)) || m.group !== defaultGroupOf(m.match) || m.name !== m.match).length;
-  else cnt = Object.keys(loadAuthority()).length + loadSites().length;
+  const cnt = Object.keys(loadAuthority()).length + loadSites().length;
   const badge = document.getElementById('authorityBadge');
   if (badge) badge.textContent = cnt ? `${cnt}개 설정` : '기본';
   const modalCnt = document.getElementById('authModalCount');
-  if (modalCnt) modalCnt.textContent = media ? `매체 ${media.length}개` : `설정 ${cnt}개`;
+  if (modalCnt) modalCnt.textContent = `설정 ${cnt}개`;
 }
 
 // ── 등록 사이트 저장소 (매체명+도메인+그룹+점수) ──
@@ -3953,76 +3877,94 @@ function hideAuthorityModal() {
 }
 
 function renderAuthorityGroups() {
-  const media = loadMedia();
-  const byGroup = {};
-  SOURCE_TIERS.forEach(t => { byGroup[t.id] = []; });
-  media.forEach((m, idx) => {
-    const g = (byGroup[m.group] !== undefined) ? m.group : 'community';
-    (byGroup[g] = byGroup[g] || []).push({ m, idx });
-  });
-  const grpOpts = id => SOURCE_TIERS.map(t => `<option value="${t.id}" ${t.id===id?'selected':''}>${t.label}</option>`).join('');
+  const ov = loadAuthority();
 
-  const html = SOURCE_TIERS.map(tier => {
-    const rows = (byGroup[tier.id] || []).slice().sort((a, b) => (b.m.score||0) - (a.m.score||0));
-    const changed = rows.some(r => r.m.domain || (parseInt(r.m.score,10) !== defaultScoreOf(r.m.match)) || r.m.group !== defaultGroupOf(r.m.match) || r.m.name !== r.m.match);
-    const rowsHtml = rows.length ? rows.map(({ m, idx }) => {
-      const nameSafe = (m.name || '').replace(/"/g, '&quot;');
-      const domSafe  = (m.domain || '').replace(/"/g, '&quot;');
-      return `<div style="display:grid; grid-template-columns:1.25fr 1.2fr 0.95fr 52px 26px; gap:6px; align-items:center; margin:4px 0;">
-        <input type="text" value="${nameSafe}" onchange="editMediaName(${idx}, this.value)" title="매체명 편집"
-               style="height:28px; border:1px solid #e2e8f0; border-radius:6px; font-size:.75rem; padding:0 8px; font-weight:600; color:#334155;">
-        <input type="text" value="${domSafe}" placeholder="도메인(선택)" onchange="editMediaDomain(${idx}, this.value)" title="도메인 입력 시 수집 때 이 매체로 인식"
-               style="height:28px; border:1px solid #e2e8f0; border-radius:6px; font-size:.7rem; padding:0 8px; color:#64748b;">
-        <select onchange="moveMedia(${idx}, this.value)" title="카테고리 이동"
-                style="height:28px; border:1px solid #e2e8f0; border-radius:6px; font-size:.7rem; padding:0 3px; color:#475569;">${grpOpts(m.group)}</select>
-        <input type="number" min="0" max="100" value="${m.score}" onchange="editMediaScore(${idx}, this.value)" title="공신력 점수"
-               style="height:28px; text-align:center; border:1px solid #cbd5e1; border-radius:6px; font-size:.75rem;">
-        <button onclick="deleteMedia(${idx})" title="이 매체 삭제" style="border:none; background:#fee2e2; color:#dc2626; border-radius:6px; width:26px; height:28px; cursor:pointer; font-size:.78rem;">✕</button>
-      </div>`;
-    }).join('') : '<div style="font-size:.72rem; color:#cbd5e1; padding:4px 2px;">이 카테고리에 매체가 없습니다</div>';
+  const groupHtml = SOURCE_TIERS.map(tier => {
+    const repScore = authScore(tier.sources[0]);
+    const changed  = tier.sources.some(s => s in ov);
+    const chips = tier.sources.map(s => {
+      const sc = authScore(s);
+      const isCh = s in ov;
+      const safe = s.replace(/'/g, "\\'");
+      return `<span style="display:inline-flex; align-items:center; gap:5px; background:${isCh?'#ede9fe':'#f1f5f9'}; border:1px solid ${isCh?'#c4b5fd':'#e2e8f0'}; font-size:.72rem; padding:3px 6px 3px 10px; border-radius:10px; margin:3px;">
+        <span style="color:${isCh?'#6d28d9':'#475569'}; font-weight:${isCh?'700':'500'};">${s}</span>
+        <input type="number" min="0" max="100" value="${sc}" title="이 매체 점수 직접 편집"
+               onchange="setMediaScore('${safe}', this.value)"
+               style="width:46px; height:22px; text-align:center; border:1px solid #cbd5e1; border-radius:5px; font-size:.72rem; ${isCh?'color:#6d28d9; font-weight:700; background:#fff;':''}"></span>`;
+    }).join('');
     return `
       <div style="border:1px solid ${changed?'#c4b5fd':'#e2e8f0'}; border-radius:10px; padding:12px 14px; margin:10px 0; background:${changed?'#faf5ff':'#fff'};">
-        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:6px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
           <div>
             <span style="font-size:.85rem; font-weight:700; color:#1e293b;">${tier.label}</span>
             ${tier.desc ? `<span style="font-size:.68rem; color:#94a3b8; margin-left:6px;">${tier.desc}</span>` : ''}
-            <span style="font-size:.66rem; color:#94a3b8; margin-left:6px;">${rows.length}개</span>
           </div>
           <div style="display:flex; align-items:center; gap:6px;">
-            <button class="btn btn-sm btn-outline" style="height:26px; padding:0 9px; font-size:.72rem;" onclick="bumpGroupScore('${tier.id}',-5)" title="이 그룹 전체 −5">−5</button>
-            <button class="btn btn-sm btn-outline" style="height:26px; padding:0 9px; font-size:.72rem;" onclick="bumpGroupScore('${tier.id}',5)" title="이 그룹 전체 +5">+5</button>
+            <button class="btn btn-sm btn-outline" style="height:28px; padding:0 9px;" onclick="bumpGroupScore('${tier.id}',-5)">−5</button>
+            <input type="number" min="0" max="100" value="${repScore}" id="grpScore_${tier.id}"
+                   style="width:64px; height:28px; text-align:center; border:1px solid #cbd5e1; border-radius:6px; font-size:.8rem;"
+                   onchange="setGroupScore('${tier.id}', this.value)">
+            <button class="btn btn-sm btn-outline" style="height:28px; padding:0 9px;" onclick="bumpGroupScore('${tier.id}',5)">+5</button>
           </div>
         </div>
-        ${rowsHtml}
+        <div style="margin-top:8px;">${chips}</div>
       </div>`;
   }).join('');
 
-  document.getElementById('authGroupsArea').innerHTML = html;
+  // 등록한 사이트 (도메인 인식 + 점수)
+  const sites = loadSites();
+  let sitesHtml = '';
+  if (sites.length) {
+    const rows = sites.map(s => {
+      const g = SOURCE_TIERS.find(t => t.id === s.group);
+      const gLabel = g ? g.label : '미지정';
+      return `
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:7px 11px; background:#fff; border:1px solid #fde68a; border-radius:8px; margin:5px 0;">
+          <div style="min-width:0; overflow:hidden;">
+            <span style="font-size:.8rem; font-weight:700; color:#1e293b;">${s.name}</span>
+            <span style="font-size:.7rem; color:#94a3b8; margin-left:6px;">${s.domain}</span>
+            <span style="font-size:.66rem; color:#b45309; background:#fef3c7; padding:1px 7px; border-radius:8px; margin-left:6px; white-space:nowrap;">${gLabel}</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+            <b style="font-size:.82rem; color:#92400e;">${s.score}</b>
+            <button onclick="removeSite('${s.domain.replace(/'/g,"\\'")}')" style="border:none; background:#fde68a; color:#92400e; border-radius:6px; width:24px; height:24px; cursor:pointer;">✕</button>
+          </div>
+        </div>`;
+    }).join('');
+    sitesHtml = `
+      <div style="border:1px dashed #fbbf24; border-radius:10px; padding:12px 14px; margin:10px 0; background:#fffbeb;">
+        <div style="font-size:.85rem; font-weight:700; color:#92400e;">🌐 등록한 사이트 <span style="font-weight:500; color:#b45309;">· 도메인 인식 + 점수 적용</span></div>
+        <div style="margin-top:8px;">${rows}</div>
+      </div>`;
+  }
+
+  document.getElementById('authGroupsArea').innerHTML = groupHtml + sitesHtml;
 }
 
 function setGroupScore(tierId, val) {
   let score = parseInt(val, 10);
   if (isNaN(score)) return;
   score = Math.max(0, Math.min(100, score));
-  const media = loadMedia();
-  media.forEach(m => { if (m.group === tierId) m.score = score; });
-  saveMedia(media);
+  const tier = SOURCE_TIERS.find(t => t.id === tierId);
+  if (!tier) return;
+  const ov = loadAuthority();
+  tier.sources.forEach(s => { ov[s] = score; });
+  saveAuthorityMap(ov);
   renderAuthorityGroups();
 }
 function bumpGroupScore(tierId, delta) {
-  const media = loadMedia();
-  media.forEach(m => { if (m.group === tierId) m.score = Math.max(0, Math.min(100, (parseInt(m.score,10)||0) + delta)); });
-  saveMedia(media);
-  renderAuthorityGroups();
+  const tier = SOURCE_TIERS.find(t => t.id === tierId);
+  if (!tier) return;
+  setGroupScore(tierId, authScore(tier.sources[0]) + delta);
 }
-// 매체명으로 점수 설정 (호환용)
-function setMediaScore(name, val) {
+// 개별 매체 점수 직접 편집 (재렌더 안 함 — 입력 포커스 유지)
+function setMediaScore(media, val) {
   let score = parseInt(val, 10);
   if (isNaN(score)) return;
   score = Math.max(0, Math.min(100, score));
-  const media = loadMedia();
-  const m = media.find(x => x.name === name || x.match === name);
-  if (m) { m.score = score; saveMedia(media); }
+  const ov = loadAuthority();
+  ov[media] = score;
+  saveAuthorityMap(ov);
 }
 
 // ── ⭐ 저공신력 매체 제외 ─────────────────────────────────────
@@ -4044,19 +3986,37 @@ function setAuthMin(val) {
 // 수집에 보낼 값: 토글 OFF면 0(제외 안 함)
 function authorityMinForCollect() { return getAuthExclude() ? getAuthMin() : 0; }
 
-// 구버전 핸들러 호환 — 통합 모델로 위임
-function addSite() { addMedia(); }
+function addSite() {
+  const name   = (document.getElementById('siteName').value || '').trim();
+  let   domain = (document.getElementById('siteDomain').value || '').trim().toLowerCase();
+  const group  = document.getElementById('siteGroup').value;
+  let   score  = parseInt(document.getElementById('siteScore').value, 10);
+  if (!name)   { showToast('⚠️ 매체명을 입력하세요'); return; }
+  if (!domain) { showToast('⚠️ 도메인을 입력하세요'); return; }
+  if (isNaN(score)) score = 45;
+  score = Math.max(0, Math.min(100, score));
+  // 도메인 정규화: http·www·경로 제거
+  domain = domain.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
+  if (!domain) { showToast('⚠️ 올바른 도메인을 입력하세요'); return; }
+  const sites = loadSites();
+  const idx = sites.findIndex(s => s.domain === domain);
+  const entry = { name, domain, group, score };
+  if (idx >= 0) sites[idx] = entry; else sites.push(entry);
+  saveSites(sites);
+  document.getElementById('siteName').value = '';
+  document.getElementById('siteDomain').value = '';
+  renderAuthorityGroups();
+  showToast(`✅ "${name}" (${domain}) 등록됨 · ${score}점`);
+}
 function removeSite(domain) {
-  const media = loadMedia();
-  const i = media.findIndex(m => m.domain === domain);
-  if (i >= 0) { media.splice(i, 1); saveMedia(media); renderAuthorityGroups(); }
+  const sites = loadSites().filter(s => s.domain !== domain);
+  saveSites(sites);
+  renderAuthorityGroups();
 }
 function resetAuthority() {
-  if (!confirm('매체 공신력 설정을 모두 기본값으로 되돌리시겠습니까?\n(추가·이름변경·카테고리이동·삭제·점수 내역이 모두 사라집니다)')) return;
-  localStorage.removeItem('cre_media');
+  if (!confirm('매체 공신력 조정을 모두 기본값으로 되돌리시겠습니까?')) return;
   localStorage.removeItem('cre_authority');
-  localStorage.removeItem('cre_sites');
-  saveMedia(seedMedia());
+  updateAuthorityBadge();
   renderAuthorityGroups();
   showToast('↺ 공신력 기본값으로 초기화되었습니다');
 }
@@ -4143,7 +4103,10 @@ function resetPrompts() {
 
 function getCollectOverrides() {
   const kwOn = getKeywordOverrideFlag();
-  const { authority, domains } = mediaMaps();
+  const sites = loadSites();
+  const authority = { ...loadAuthority() };
+  const domains = {};
+  sites.forEach(s => { authority[s.name] = s.score; domains[s.domain] = s.name; });
   // 비어있지 않은 카테고리 지침만 전송
   const catsRaw = loadPromptCats();
   const promptCats = {};
