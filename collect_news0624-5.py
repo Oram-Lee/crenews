@@ -2908,7 +2908,7 @@ def run_weekly(config: NewsConfig, date_from: datetime, date_to: datetime,
     total_count = sum(c["count"] for c in all_categories_output)
 
     flat = [it for c in all_categories_output for it in c["items"]]
-    highlights = []   # ⭐ 위클리 하이라이트 비활성화 — UI 미표시 + 백엔드 생성도 중단(불필요한 LLM 호출·시간 절감). 재활성화하려면 아래 한 줄로 교체: highlights = generate_highlights(config, flat, top_n=top_n)
+    highlights = generate_highlights(config, flat, top_n=top_n)
 
     output = {
         "generated_at": NOW.strftime("%Y-%m-%d %H:%M:%S"),
@@ -2922,7 +2922,7 @@ def run_weekly(config: NewsConfig, date_from: datetime, date_to: datetime,
     os.makedirs("data", exist_ok=True)
     with open(WEEKLY_OUT_PATH, "w", encoding="utf-8") as f:
         json.dump(output, f, ensure_ascii=False, indent=2)
-    print(f"\n{'='*60}\n✅ 주간 큐레이션 완료: 본문 {total_count}건 → {WEEKLY_OUT_PATH}\n{'='*60}")
+    print(f"\n{'='*60}\n✅ 주간 큐레이션 완료: 본문 {total_count}건 + 하이라이트 {len(highlights)}건 → {WEEKLY_OUT_PATH}\n{'='*60}")
 
 
 # ================================================================
