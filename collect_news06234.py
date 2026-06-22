@@ -931,10 +931,36 @@ def _source_from_naver_item(original_link: str, naver_link: str, title: str) -> 
     """네이버 뉴스 아이템에서 실제 신문사명 추출.
     우선순위: ① naver_link oid 코드 → ② originallink 도메인 → ③ 제목 대괄호
     """
+    # ── ① naver URL oid 코드 매핑 ────────────────────────────────
+    OID_MAP = {
+        '001': '연합뉴스',    '003': '뉴시스',      '005': '국민일보',
+        '006': '경향신문',    '007': '경향신문',     '008': '머니투데이',
+        '009': '중앙일보',    '010': '중앙일보',     '011': '서울경제',
+        '013': '헤럴드경제',  '014': '파이낸셜뉴스', '015': '한국경제',
+        '016': '한국경제',    '018': '이데일리',     '020': '동아일보',
+        '021': '문화일보',    '022': '세계일보',     '023': '조선일보',
+        '024': '한국일보',    '025': '중앙일보',     '028': '한겨레',
+        '029': '디지털타임스','030': '국민일보',     '032': '경향신문',
+        '033': '한겨레',      '034': '조선일보',     '037': '조선비즈',
+        '038': '한국일보',    '047': '오마이뉴스',   '050': '파이낸셜뉴스',
+        '055': 'SBS',         '056': 'KBS',          '057': 'MBC',
+        '058': 'YTN',         '079': '서울신문',     '081': '서울신문',
+        '082': '머니투데이',  '092': '머니투데이',   '093': '헤럴드경제',
+        '096': '파이낸셜뉴스','098': '뉴시스',       '119': '아이뉴스24',
+        '138': '이데일리',    '214': '한국경제TV',   '215': '한국경제',
+        '243': '이코노미스트','277': '아시아경제',   '311': '아시아경제',
+        '366': '조선비즈',    '421': '뉴스핌',       '422': '뉴스핌',
+        '469': '한국일보',    '584': '서울경제',     '011': '서울경제',
+    }
     import re as _re
-    from urllib.parse import urlparse as _up
+    for url in [naver_link, original_link]:
+        if not url:
+            continue
+        m = _re.search(r'/article/(\d{3})/', url)
+        if m and m.group(1) in OID_MAP:
+            return OID_MAP[m.group(1)]
 
-    # ── ① originallink 도메인 매핑 (가장 신뢰도 높음: 원본 언론사 URL) ──
+    # ── ② originallink 도메인 매핑 ───────────────────────────────
     DOMAIN_MAP = {
         'hankyung.com':    '한국경제',   'mk.co.kr':       '매일경제',
         'sedaily.com':     '서울경제',   'edaily.co.kr':   '이데일리',
@@ -947,46 +973,21 @@ def _source_from_naver_item(original_link: str, naver_link: str, title: str) -> 
         'asiae.co.kr':     '아시아경제', 'fnnews.com':     '파이낸셜뉴스',
         'inews24.com':     '아이뉴스24', 'ajunews.com':    '아주경제',
         'dailian.co.kr':   '데일리안',   'ohmynews.com':   '오마이뉴스',
-        'biz.chosun.com':  '조선비즈',   'opinionnews.co.kr':'오피니언뉴스',
     }
     if original_link and 'naver.com' not in original_link:
         try:
+            from urllib.parse import urlparse as _up
             host = _up(original_link).netloc.lower()
             if host.startswith('www.'):
                 host = host[4:]
-            # 사용자 등록 도메인 우선, 그다음 내장 매핑 (긴 도메인 먼저: biz.chosun.com > chosun.com)
-            pairs = list(EXTRA_SOURCE_DOMAINS.items()) + list(DOMAIN_MAP.items())
-            pairs.sort(key=lambda kv: len(kv[0]), reverse=True)
-            for domain, name in pairs:
+            # 사용자 등록 도메인 우선, 그다음 내장 매핑
+            for domain, name in list(EXTRA_SOURCE_DOMAINS.items()) + list(DOMAIN_MAP.items()):
                 if not name:
                     continue
-                if host == domain or host.endswith('.' + domain):
+                if host == domain or host.endswith('.' + domain) or domain in host:
                     return name
         except Exception:
             pass
-
-    # ── ② naver URL oid 코드 매핑 (도메인 매칭 실패·네이버 URL일 때 폴백) ──
-    #     ※ 확실한 코드만 등재. 불확실한 코드는 제외 → 제목/도메인으로 폴백.
-    OID_MAP = {
-        '001': '연합뉴스',    '003': '뉴시스',       '005': '국민일보',
-        '006': '미디어오늘',  '008': '머니투데이',   '009': '매일경제',
-        '011': '서울경제',    '013': '연합인포맥스', '014': '파이낸셜뉴스',
-        '015': '한국경제',    '016': '헤럴드경제',   '018': '이데일리',
-        '020': '동아일보',    '021': '문화일보',     '022': '세계일보',
-        '023': '조선일보',    '024': '매경이코노미', '025': '중앙일보',
-        '028': '한겨레',      '029': '디지털타임스', '030': '전자신문',
-        '032': '경향신문',    '047': '오마이뉴스',   '052': 'YTN',
-        '055': 'SBS',         '056': 'KBS',          '057': 'MBC',
-        '081': '서울신문',    '119': '아이뉴스24',   '277': '아시아경제',
-        '366': '조선비즈',    '421': '뉴스핌',       '422': '뉴스핌',
-        '469': '한국일보',    '584': '서울경제',
-    }
-    for url in [naver_link, original_link]:
-        if not url:
-            continue
-        m = _re.search(r'/article/(\d{3})/', url)
-        if m and m.group(1) in OID_MAP:
-            return OID_MAP[m.group(1)]
 
     # ── ③ 제목 대괄호에서 추출 ────────────────────────────────────
     EDITORIAL_TAGS = {
@@ -2852,7 +2853,7 @@ def run_weekly(config: NewsConfig, date_from: datetime, date_to: datetime,
         ranked = _rule_rank(cat_items)[:cap]
         print(f"\n[{category['icon']} {category['name']}] 풀 {len(cat_items)} → AI 투입 {len(ranked)} (상한 {cap})")
         curated = ai_curate(config, ranked, category, max_out=cap)
-        curated = _rule_rank(curated)   # 최신순 대신 중요도순(관련도·공신력·최신성)
+        curated.sort(key=lambda x: (x.get("pub_date") or ""), reverse=True)
         for i, it in enumerate(curated):
             it["rank"] = i + 1
             it["category"] = category["id"]
