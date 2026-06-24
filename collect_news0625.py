@@ -2197,23 +2197,10 @@ def _build_combined_prompt(batch: List[Dict], cat_name: str, category: Dict) -> 
 {news_text}
 
 ━━━━━━━━━━━━━━━━━━━━
-【STEP 1 — 선별 (보수적 포함: 명확히 제외 대상일 때만 빼고, 나머지는 포함)】
-■ 제외 — 아래에 '명확히' 해당할 때만 제외 (애매하면 제외하지 말 것):
-  · 주택·아파트·분양·청약·재건축·재개발 등 주거용이 핵심인 기사
-  · 주식시황·증시·코스피/코스닥·종목·펀드 수익률 등 금융투자 시황 기사
-  · 해외 부동산, 또는 국내 기업의 해외 사업·수출·납품·제조·설비 공급이 핵심인 기사
-    (예: 국내 기업의 해외 데이터센터/해외 주거단지 공조·설비 공급)
-  · 단순 인사·동정·시상·구인, 또는 기사 가치가 없는 순수 홍보
-  · 부동산·상업용 부동산과 전혀 무관한 기사
-■ 포함 — 위 '명확한 제외'에 걸리지 않으면 기본적으로 포함:
-  · 국내 상업용 부동산(오피스·리테일·물류·호텔·데이터센터·지식산업센터)의
-    매입·매각/거래, 임대차·공실·임대료, 개발·PF, 시장동향·정책·제도, 운용사·리츠·투자
-  · 카테고리 정의에 부합하거나, 그 주변·연관 사안
-  · 부분적으로만 관련돼도 CRE 임대차·투자 실무자에게 참고가치가 있으면 포함
-■ 판정 원칙 (일관성 + 보수적):
-  · 제외는 위 목록에 '명확히' 해당할 때만 한다. 애매하거나 경계선이면 → '포함'.
-  · 의심스러우면 빼지 말고 담는다(과소수집보다 과대수집을 택한다).
-  · 같은 기사는 언제 평가해도 같은 결과가 나오도록 위 규칙만으로 판정(인상·추측 금지).
+【STEP 1 — 선별】
+- 기사의 핵심 주제가 카테고리 정의에 부합하면 선별.
+- 주택·아파트·분양·주식시황·해외 부동산만 다루는 기사는 제외.
+- 애매하면 제외. 명확히 부합하는 것만 선별.
 
 【STEP 2 — 선별된 기사만 요약】
 우선 포함할 수치: {key_focus}
@@ -2291,7 +2278,7 @@ def ai_curate(config: NewsConfig, news_items: List[Dict],
     if not news_items:
         return []
 
-    batch    = news_items[:50]
+    batch    = news_items[:35]
     cat_name = category.get("name", "상업용 부동산")
 
     # ── 크롤링을 API 호출 전에 실행 (선별+요약 통합 프롬프트에 본문 제공) ──
@@ -2315,7 +2302,7 @@ def ai_curate(config: NewsConfig, news_items: List[Dict],
                 try:
                     print(f"  🤖 Claude 선별+요약 통합... 모델={model_name} ({len(batch)}건)")
                     resp = client.messages.create(
-                        model=model_name, max_tokens=8000, temperature=0,
+                        model=model_name, max_tokens=4000, temperature=0.15,
                         messages=[{"role": "user", "content": prompt}]
                     )
                     result_text = resp.content[0].text.strip()
@@ -2358,7 +2345,7 @@ def ai_curate(config: NewsConfig, news_items: List[Dict],
                         resp = gemini_model.generate_content(
                             prompt,
                             generation_config=genai.GenerationConfig(
-                                temperature=0, max_output_tokens=8000,
+                                temperature=0.15, max_output_tokens=4000,
                             )
                         )
                         result_text = resp.text.strip()
