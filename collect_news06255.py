@@ -137,18 +137,6 @@ COMMON_NOISE_TITLE_PATTERNS = [
     '상한가', '하한가',  # 주식 시황 기사
 ]
 
-# ── 분양·청약 광고성 기사(advertorial) 차단 패턴 ─────────────────
-#   기사로 위장한 분양/청약 홍보. 제목·설명·본문에 아래 '판매 권유' 표현이 있으면 광고로 간주.
-#   (高정밀: 일반 뉴스에는 거의 안 나오고 분양 광고에만 나오는 표현만 선별)
-ADVERTORIAL_PATTERNS = [
-    '홍보관', '모델하우스', '견본주택', '분양관', '분양사무소', '분양 사무소',
-    '분양상담', '분양 상담', '분양문의', '분양 문의',
-    '청약상담', '청약 상담', '청약문의', '청약 문의',
-    '입주상담', '입주 상담', '입주문의', '입주 문의',
-    '선착순 분양', '선착순 마감', '선착순 계약', '선착순 모집',
-    '잔여세대', '잔여 세대', '수익률 보장', '확정수익', '확정 수익',
-]
-
 # ── 공통 must_not_keywords (모든 카테고리에 추가) ────────────────
 BASE_MUST_NOT = [
     # 주거용 부동산 (CRE 아님)
@@ -1617,15 +1605,6 @@ def filter_and_dedupe(items: List[Dict], category: Dict,
 
     items = [item for item in items if not _is_noise_title(item.get("title", ""))]
 
-    # 0-B) 분양·청약 광고성 기사(advertorial) 1차 차단 (제목+설명에 판매 권유 표현)
-    def _is_advertorial(it: Dict) -> bool:
-        text = it.get("title", "") + " " + it.get("description", "")
-        return any(p in text for p in ADVERTORIAL_PATTERNS)
-    _before_ad = len(items)
-    items = [it for it in items if not _is_advertorial(it)]
-    if _before_ad != len(items):
-        print(f"  📢 분양광고 제외: {_before_ad}→{len(items)}건")
-
     # 1) BASE_MUST_NOT 기반 명백한 비CRE 키워드 차단 (제목+설명)
     filtered = [
         item for item in items
@@ -1874,17 +1853,18 @@ def _build_summary_prompt(items: List[Dict], category: Dict) -> str:
 
 def _summarize_with_claude_sonnet(config: NewsConfig, items: List[Dict],
                                    category: Dict) -> List[Dict]:
-    """Claude 전용 요약 생성. 모델 순차 폴백, 모두 실패 시 항목 유지·빈 요약 반환."""
+    """Claude Sonnet 먼저, Gemini 폴백. 둘 다 실패 시 에러 메시지만 출력 (Python 폴백 없음)."""
     if not items:
         return items
 
     prompt = _build_summary_prompt(items, category)
 
-    # ── Claude 전용 (모델 순차 폴백) ───────────────────────────────
+    # ── 1순위: Claude Sonnet ───────────────────────────────────────
     if config.CLAUDE_API_KEY:
         SONNET_MODELS = list(dict.fromkeys([
             config.CLAUDE_SUMMARY_MODEL,   # claude-sonnet-4-6
-            "claude-sonnet-4-5",           # 1차 폴백
+            "claude-sonnet-4-5",
+            "claude-3-5-sonnet-20241022",
             config.CLAUDE_MODEL,           # Haiku 최후 폴백
         ]))
         try:
@@ -1918,8 +1898,46 @@ def _summarize_with_claude_sonnet(config: NewsConfig, items: List[Dict],
         except ImportError:
             print("  ❌ anthropic 패키지 없음 — pip install anthropic")
 
-    # ── Claude 실패 → 항목은 유지하고 빈 요약 반환 ────────────────
-    print("  ❌ [요약 생성 실패] Claude API를 확인하세요 (config.json 또는 CLAUDE_API_KEY).")
+    # ── 2순위: Gemini ──────────────────────────────────────────────
+    if config.GEMINI_API_KEY:
+        try:
+            import google.generativeai as genai
+            genai.configure(api_key=config.GEMINI_API_KEY)
+            GEMINI_MODELS = list(dict.fromkeys([
+                "gemini-1.5-pro-002",
+                config.GEMINI_MODEL,
+                "gemini-2.0-flash",
+            ]))
+            for model_name in GEMINI_MODELS:
+                try:
+                    print(f"  ✍️  Gemini 요약 생성... 모델={model_name}")
+                    gm = genai.GenerativeModel(model_name)
+                    resp = gm.generate_content(
+                        prompt,
+                        generation_config=genai.GenerationConfig(temperature=0.2, max_output_tokens=2000)
+                    )
+                    result_text = resp.text.strip()
+                    summaries = _parse_summary_json(result_text)
+                    if summaries is not None:
+                        updated = _apply_summaries(items, summaries)
+                        print(f"  ✅ Gemini 요약 완료: {len(updated)}건")
+                        return updated
+                except Exception as e:
+                    err = str(e)
+                    if '429' in err or 'quota' in err.lower() or 'RESOURCE_EXHAUSTED' in err:
+                        print(f"  ⚠️ {model_name} 한도 초과 → 다음 모델")
+                    elif '404' in err or 'not found' in err.lower():
+                        print(f"  ⚠️ {model_name} 없음 → 다음 모델")
+                    else:
+                        print(f"  ⚠️ {model_name} 오류: {type(e).__name__}: {e}")
+        except ImportError:
+            print("  ❌ google-generativeai 패키지 없음 — pip install google-generativeai")
+
+    # ── API 모두 실패 → 에러 메시지 출력, Python 폴백 없음 ────────
+    print("  ❌ [요약 생성 실패] Claude/Gemini API를 확인하세요.")
+    print("     - Claude API 키: config.json 또는 CLAUDE_API_KEY 환경변수")
+    print("     - Gemini API 키: config.json 또는 GEMINI_API_KEY 환경변수")
+    print("     - Gemini 일일 한도: 내일 자동 초기화됩니다.")
     # 빈 요약으로 반환 (항목은 유지)
     for item in items:
         item.setdefault('ai_summary', '▪ (API 오류 — 요약 생성 실패)')
@@ -2095,54 +2113,25 @@ def _apply_fallback_summaries(items: List[Dict]) -> List[Dict]:
 
 
 def _parse_curate_json(result_text: str) -> Optional[List[Dict]]:
-    """AI 응답에서 JSON '객체 배열'을 추출 (설명문·코드블록·[1] 같은 참조 대괄호가 섞여도 견고).
-    - 균형 잡힌 [...] 후보를 모두 스캔해 실제 객체 배열을 찾음
-    - [1]·[2] 같은 정수 배열(설명 속 참조)은 자동 무시
-    - 빈 배열 []도 정상 결과(선별 0건)로 인정"""
-    if not result_text:
-        return None
-    text = result_text
-    for old_q, new_q in [('\u201c', '"'), ('\u201d', '"'), ('\u2018', "'"), ('\u2019', "'")]:
-        text = text.replace(old_q, new_q)
-
-    def _try(s: str):
-        for cand in (s, re.sub(r'[\x00-\x1f\x7f]', ' ', s)):
+    """AI 응답에서 JSON 배열 파싱 (3단계 내성)"""
+    try:
+        clean = re.sub(r'```(?:json)?|```', '', result_text).strip()
+        for old_q, new_q in [('\u201c', '"'), ('\u201d', '"'), ('\u2018', "'"), ('\u2019', "'")]:
+            clean = clean.replace(old_q, new_q)
+        json_match = re.search(r'\[[\s\S]*\]', clean)
+        if not json_match:
+            return None
+        json_str = json_match.group()
+        try:
+            return json.loads(json_str)
+        except json.JSONDecodeError:
+            json_str = re.sub(r'[\x00-\x1f\x7f]', ' ', json_str)
             try:
-                return json.loads(cand)
+                return json.loads(json_str)
             except json.JSONDecodeError:
-                try:
-                    return json.loads(sanitize_json_strings(cand))
-                except Exception:
-                    pass
+                return json.loads(sanitize_json_strings(json_str))
+    except Exception:
         return None
-
-    # 코드펜스 내용을 우선 후보로, 그다음 전체 텍스트
-    sources = []
-    fence = re.search(r'```(?:json)?\s*([\s\S]*?)```', text)
-    if fence:
-        sources.append(fence.group(1))
-    sources.append(text)
-
-    best_empty = None
-    for src in sources:
-        for m in re.finditer(r'\[', src):
-            st = m.start()
-            depth = 0
-            for i in range(st, len(src)):
-                ch = src[i]
-                if ch == '[':
-                    depth += 1
-                elif ch == ']':
-                    depth -= 1
-                    if depth == 0:
-                        parsed = _try(src[st:i + 1])
-                        if isinstance(parsed, list):
-                            if parsed and all(isinstance(x, dict) for x in parsed):
-                                return parsed              # 진짜 선별 배열(객체 배열)
-                            if len(parsed) == 0 and best_empty is None:
-                                best_empty = []            # 빈 결과 후보 보관
-                        break
-    return best_empty
 
 
 def _apply_curations(batch: List[Dict], curations: List[Dict],
@@ -2200,9 +2189,7 @@ def _build_combined_prompt(batch: List[Dict], cat_name: str, category: Dict) -> 
     _global_extra = (EXTRA_PROMPT_GLOBAL or "").strip()
     global_extra_block = f"\n\n【공통 추가 지침 — 선별·요약 모두 적용】\n{_global_extra}" if _global_extra else ""
 
-    return f"""한국 CRE 뉴스 에디터입니다. 아래 {len(batch)}건에서 [{cat_name}] 기사를 선별하고, 선별된 것만 요약합니다.
-
-⚠️ 출력 형식(필수): 오직 JSON 배열 하나만 출력한다. 판정 과정·이유·머리말·해설·'STEP' 표기·코드블록(```)을 절대 쓰지 않는다. 응답의 첫 글자는 '[' 이고 마지막 글자는 ']' 이다.
+    return f"""한국 CRE 뉴스 에디터입니다. 아래 {len(batch)}건에서 [{cat_name}] 카테고리 기사를 선별하고, 선별된 기사만 개조식으로 요약하세요.
 
 【카테고리 정의】
 {cat_definition}{cat_extra_block}
@@ -2210,14 +2197,13 @@ def _build_combined_prompt(batch: List[Dict], cat_name: str, category: Dict) -> 
 {news_text}
 
 ━━━━━━━━━━━━━━━━━━━━
-【선별 기준 (보수적 포함: 명확히 제외 대상일 때만 빼고, 나머지는 포함)】
+【STEP 1 — 선별 (보수적 포함: 명확히 제외 대상일 때만 빼고, 나머지는 포함)】
 ■ 제외 — 아래에 '명확히' 해당할 때만 제외 (애매하면 제외하지 말 것):
   · 주택·아파트·분양·청약·재건축·재개발 등 주거용이 핵심인 기사
   · 주식시황·증시·코스피/코스닥·종목·펀드 수익률 등 금융투자 시황 기사
   · 해외 부동산, 또는 국내 기업의 해외 사업·수출·납품·제조·설비 공급이 핵심인 기사
     (예: 국내 기업의 해외 데이터센터/해외 주거단지 공조·설비 공급)
-  · 단순 인사·동정·시상·구인 기사
-  · 분양·청약 광고(기사로 위장한 홍보): 본문에 '홍보관'·'모델하우스'·'견본주택'·'분양/청약 상담'·'분양/청약 문의'·'선착순'·'즉시 입주'·'계약금/중도금'·'잔여세대'·'수익률 보장' 등 판매·청약 권유 표현이 있으면, 지식산업센터·오피스 분양이라도 무조건 제외
+  · 단순 인사·동정·시상·구인, 또는 기사 가치가 없는 순수 홍보
   · 부동산·상업용 부동산과 전혀 무관한 기사
 ■ 포함 — 위 '명확한 제외'에 걸리지 않으면 기본적으로 포함:
   · 국내 상업용 부동산(오피스·리테일·물류·호텔·데이터센터·지식산업센터)의
@@ -2229,7 +2215,7 @@ def _build_combined_prompt(batch: List[Dict], cat_name: str, category: Dict) -> 
   · 의심스러우면 빼지 말고 담는다(과소수집보다 과대수집을 택한다).
   · 같은 기사는 언제 평가해도 같은 결과가 나오도록 위 규칙만으로 판정(인상·추측 금지).
 
-【요약 규칙 (선별된 기사에만 적용)】
+【STEP 2 — 선별된 기사만 요약】
 우선 포함할 수치: {key_focus}
 1. summary: "▪ "로 시작하는 개조식 줄. 최대 2줄. 각 줄 40자 이하.
    - 줄1: 핵심사실 (주체+행위+수치)
@@ -2246,7 +2232,7 @@ def _build_combined_prompt(batch: List[Dict], cat_name: str, category: Dict) -> 
   comment: "수송동 오피스 신규 공급 신호"
 
 ━━━━━━━━━━━━━━━━━━━━
-아래 형식의 JSON 배열만 출력 (설명·머리말·코드블록 절대 금지, 첫 글자 '['):
+출력 — 선별된 기사만 JSON 배열 (코드블록 없이):
 [
   {{
     "index": <기사번호 정수>,
@@ -2257,7 +2243,7 @@ def _build_combined_prompt(batch: List[Dict], cat_name: str, category: Dict) -> 
     "tags": ["태그1", "태그2"]
   }}
 ]
-선별 기사가 없으면 빈 배열 [] 만 출력한다. JSON 외 어떤 텍스트도 쓰지 않는다."""
+선별 기사 없으면 [] 출력."""
 
 
 def _apply_combined_results(batch: List[Dict], results: List[Dict],
@@ -2313,50 +2299,105 @@ def ai_curate(config: NewsConfig, news_items: List[Dict],
 
     prompt = _build_combined_prompt(batch, cat_name, category)
 
-    # ── Claude 전용 (선별+요약 통합) — Gemini 폴백 제거 ───────────
+    # ── 1순위: Claude Sonnet (선별+요약 통합) ─────────────────────
+    # 큐레이션+요약 동시 처리이므로 Haiku 아닌 Sonnet 사용
     if config.CLAUDE_API_KEY:
         try:
             import anthropic
             CLAUDE_MODELS = list(dict.fromkeys([
                 config.CLAUDE_SUMMARY_MODEL,   # claude-sonnet-4-6 (통합 기본)
-                "claude-sonnet-4-5",           # 1차 폴백
+                "claude-sonnet-4-5",
+                "claude-3-5-sonnet-20241022",
                 config.CLAUDE_MODEL,           # Haiku 최후 폴백
             ]))
             client = anthropic.Anthropic(api_key=config.CLAUDE_API_KEY)
             for model_name in CLAUDE_MODELS:
-                for attempt in range(2):       # 과부하(529) 시 1회 재시도
-                    try:
-                        print(f"  🤖 Claude 선별+요약... 모델={model_name} ({len(batch)}건)"
-                              + (f" [재시도 {attempt}]" if attempt else ""))
-                        resp = client.messages.create(
-                            model=model_name, max_tokens=8000, temperature=0,
-                            messages=[{"role": "user", "content": prompt}]
-                        )
-                        result_text = resp.content[0].text.strip()
-                        print(f"  📝 응답: {result_text[:80]}")
-                        results = _parse_curate_json(result_text)
-                        if results is not None:
-                            selected = _apply_combined_results(batch, results, model_name=model_name)
-                            print(f"  ✅ Claude 완료: {len(selected)}건 선별+요약")
-                            return selected
-                        print(f"  ⚠️ {model_name} JSON 파싱 실패 → 다음 모델")
-                        break
-                    except Exception as e:
-                        err = str(e).lower()
-                        if ('529' in err or 'overloaded' in err) and attempt == 0:
-                            print(f"  ⏳ {model_name} 과부하 → 5초 후 재시도")
-                            time.sleep(5)
-                            continue
-                        if '404' in err or 'not found' in err:
-                            print(f"  ⚠️ {model_name} 없음 → 다음 모델")
-                        else:
-                            print(f"  ⚠️ Claude {model_name} 실패: {type(e).__name__}: {e}")
-                        break
+                try:
+                    print(f"  🤖 Claude 선별+요약 통합... 모델={model_name} ({len(batch)}건)")
+                    resp = client.messages.create(
+                        model=model_name, max_tokens=8000, temperature=0,
+                        messages=[{"role": "user", "content": prompt}]
+                    )
+                    result_text = resp.content[0].text.strip()
+                    print(f"  📝 응답: {result_text[:100]}")
+                    results = _parse_curate_json(result_text)
+                    if results is not None:
+                        selected = _apply_combined_results(batch, results, model_name=model_name)
+                        print(f"  ✅ Claude 통합 완료: {len(selected)}건 선별+요약")
+                        return selected
+                    print(f"  ⚠️ {model_name} JSON 파싱 실패 → 다음 모델")
+                except Exception as e:
+                    err = str(e)
+                    if '529' in err or 'overloaded' in err.lower():
+                        print(f"  ⚠️ {model_name} 과부하 → 다음 모델")
+                    elif '404' in err or 'not found' in err.lower():
+                        print(f"  ⚠️ {model_name} 없음 → 다음 모델")
+                    else:
+                        print(f"  ⚠️ Claude {model_name} 실패: {type(e).__name__}: {e}")
         except ImportError:
             print("  ❌ anthropic 패키지 없음 — pip install anthropic")
 
-    # ── (Claude 실패 시) 키워드 점수 선별 + Claude 요약 폴백 ───────
-    print("  ⚠️ Claude 선별 실패 → 키워드 점수 기반 선별 + Claude 요약 폴백")
+    # ── 2순위: Gemini (선별+요약 통합) ───────────────────────────
+    if config.GEMINI_API_KEY:
+        try:
+            import google.generativeai as genai
+            genai.configure(api_key=config.GEMINI_API_KEY)
+            GEMINI_MODELS = list(dict.fromkeys([
+                config.GEMINI_MODEL,
+                "gemini-2.0-flash-lite",
+                "gemini-1.5-flash-002",
+                "gemini-1.5-flash-001",
+            ]))
+            for model_name in GEMINI_MODELS:
+                MAX_RETRIES = 3
+                for attempt in range(MAX_RETRIES):
+                    try:
+                        print(f"  🤖 Gemini 선별+요약 통합... 모델={model_name} ({len(batch)}건)" +
+                              (f" [재시도 {attempt}]" if attempt else ""))
+                        gemini_model = genai.GenerativeModel(model_name)
+                        resp = gemini_model.generate_content(
+                            prompt,
+                            generation_config=genai.GenerationConfig(
+                                temperature=0, max_output_tokens=8000,
+                            )
+                        )
+                        result_text = resp.text.strip()
+                        print(f"  📝 응답: {result_text[:100]}")
+                        results = _parse_curate_json(result_text)
+                        if results is not None:
+                            selected = _apply_combined_results(batch, results, model_name=model_name)
+                            print(f"  ✅ Gemini 통합 완료: {len(selected)}건 선별+요약")
+                            return selected
+                        print(f"  ⚠️ JSON 파싱 실패 → 다음 모델")
+                        break
+                    except Exception as e:
+                        err_str = str(e)
+                        if '429' in err_str or 'RESOURCE_EXHAUSTED' in err_str:
+                            is_daily = any(k in err_str.lower() for k in ['limit: 0', 'quota', 'daily'])
+                            if is_daily:
+                                print(f"  ⚠️ {model_name} 일일 한도 소진 → 다음 모델")
+                                break
+                            else:
+                                delay = 30
+                                m = re.search(r'retryDelay["\s:]+(\d+)', err_str)
+                                if m:
+                                    delay = max(int(m.group(1)) // 1000 + 5, 15)
+                                print(f"  ⏳ {delay}초 대기 후 재시도 ({attempt+1}/{MAX_RETRIES})")
+                                time.sleep(delay)
+                                continue
+                        elif '404' in err_str or 'not found' in err_str.lower():
+                            print(f"  ⚠️ {model_name} 모델 없음 → 다음 모델")
+                            break
+                        else:
+                            print(f"  ⚠️ {model_name} 오류: {type(e).__name__}: {e}")
+                            break
+        except ImportError:
+            print("  ❌ google-generativeai 패키지 없음 — pip install google-generativeai")
+        except Exception as e:
+            print(f"  ⚠️ Gemini 초기화 실패: {e}")
+
+    # ── 모두 실패 → 키워드 점수 선별 + AI 요약 (batch 이미 크롤링됨) ──
+    print("  ❌ 통합 API 모두 실패 — 키워드 점수 기반 선별 후 AI 요약 시도")
     fallback_items = _fallback_curate(news_items)
     # batch 가 이미 _enrich_with_article_body() 처리됐으므로 재호출 불필요
     # (fallback_items 는 news_items 의 slice 참조 → full_body 공유)
