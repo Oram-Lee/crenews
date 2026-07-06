@@ -107,43 +107,6 @@ _jobs = {
 }
 _jobs_lock = threading.Lock()
 
-# ⭐ weekly 작업의 현재 단계 라벨 (collect / curate) — 프런트 새로고침 복구용
-_job_phase = {}
-
-
-# ─────────────────────────────────────────────
-#  ⭐ Keep-Alive: Render Free 슬립 방지
-# ─────────────────────────────────────────────
-#  브라우저 탭이 백그라운드로 내려가면(Chrome 메모리 절약) 폴링이 멈추고,
-#  Render Free는 외부 트래픽 15분 부재 시 인스턴스를 내림 → 실행 중이던
-#  수집 subprocess가 통째로 죽음. 작업 실행 중 + 종료 후 약 30분간
-#  자기 자신의 공개 URL을 4분 간격으로 핑해서 인스턴스를 유지한다.
-import time as _time
-import urllib.request as _urlreq
-
-RENDER_URL = (os.environ.get('RENDER_EXTERNAL_URL') or '').rstrip('/')
-KEEPALIVE_INTERVAL    = 240   # 4분 간격 (슬립 기준 15분보다 충분히 짧게)
-KEEPALIVE_GRACE_PINGS = 8     # 종료 후 8회(≈32분) 추가 유지 — 브라우저 재접속·②단계 시작 시간 확보
-
-def _keepalive_loop(job_id: str):
-    if not RENDER_URL:
-        return   # 로컬 개발 등 Render 밖에서는 불필요
-    def _ping():
-        try:
-            _urlreq.urlopen(f"{RENDER_URL}/api/status", timeout=15).read(64)
-            print(f"[{job_id}] 💓 keep-alive", flush=True)
-        except Exception as e:
-            print(f"[{job_id}] ⚠️ keep-alive 실패: {e}", flush=True)
-    while _jobs[job_id]['running']:
-        _time.sleep(KEEPALIVE_INTERVAL)
-        if _jobs[job_id]['running']:
-            _ping()
-    for _ in range(KEEPALIVE_GRACE_PINGS):
-        _time.sleep(KEEPALIVE_INTERVAL)
-        if _jobs[job_id]['running']:
-            return   # 새 작업 시작 → 그 작업의 keep-alive 스레드가 이어받음
-        _ping()
-
 
 def _job_log(job_id: str, msg: str):
     """터미널 출력 + 작업 로그 버퍼 동시 저장"""
@@ -173,9 +136,6 @@ def _run_job(job_id: str, cmd: list):
     job['process'] = None
 
     _job_log(job_id, f"🚀 {job_id} 수집 시작 — {' '.join(cmd[1:] if cmd[0] == sys.executable else cmd)}")
-
-    # ⭐ 슬립 방지 핑 시작 (Render에서만 동작)
-    threading.Thread(target=_keepalive_loop, args=(job_id,), daemon=True).start()
 
     try:
         env = os.environ.copy()
@@ -315,7 +275,6 @@ def job_status():
 
     resp = jsonify({
         'job':     job_id,
-        'phase':   _job_phase.get(job_id, ''),
         'running': job['running'],
         'done':    job['done'],
         'success': job['success'],
@@ -493,7 +452,6 @@ def weekly_collect():
         cmd += ['--days', str(body.get('days', 1))]
     if ov_path:
         cmd += ['--overrides', ov_path]
-    _job_phase['weekly'] = 'collect'   # ⭐ 프런트 복구용 단계 라벨
     threading.Thread(target=_run_job, args=('weekly', cmd), daemon=True).start()
     return jsonify({'started': True, 'job': 'weekly',
                     'message': '일일 수집(풀 누적) 시작 — /api/job/status?job=weekly'}), 202
@@ -521,7 +479,6 @@ def weekly_curate():
         cmd += ['--days', str(body.get('days', 7))]
     if ov_path:
         cmd += ['--overrides', ov_path]
-    _job_phase['weekly'] = 'curate'   # ⭐ 프런트 복구용 단계 라벨
     threading.Thread(target=_run_job, args=('weekly', cmd), daemon=True).start()
     return jsonify({'started': True, 'job': 'weekly',
                     'message': '주간 큐레이션 시작 — /api/job/status?job=weekly'}), 202

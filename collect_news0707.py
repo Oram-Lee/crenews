@@ -1188,27 +1188,6 @@ RSS_COOKIES = {
 }
 
 
-# ── ⭐ RSS 서킷브레이커 ──────────────────────────────────────────
-#   Render IP가 Google에 차단되면 전 쿼리가 503으로 재시도만 반복하며
-#   실행 시간을 크게 늘림. 한 실행에서 throttle성 실패(429/5xx/연결오류)가
-#   연속 RSS_CB_THRESHOLD회면 남은 RSS 쿼리 전체 스킵 (Naver·더벨만으로 진행).
-#   200이 한 번이라도 오면 카운터 리셋 → 일시적 throttle과 구분.
-RSS_CB_THRESHOLD = 8
-_rss_consec_fail = 0
-_rss_disabled    = False
-
-def _rss_cb_fail():
-    global _rss_consec_fail, _rss_disabled
-    _rss_consec_fail += 1
-    if not _rss_disabled and _rss_consec_fail >= RSS_CB_THRESHOLD:
-        _rss_disabled = True
-        print(f"  ⛔ RSS 연속 실패 {_rss_consec_fail}회 — 이번 실행의 남은 RSS 쿼리를 전부 건너뜁니다 (Naver·더벨로 진행)")
-
-def _rss_cb_ok():
-    global _rss_consec_fail
-    _rss_consec_fail = 0
-
-
 def _google_rss_get(url: str, timeout: int = 20, attempts: int = 3):
     """Google RSS GET — 200이면 반환, 5xx/429는 지수 백오프 재시도.
     모두 실패하면 마지막 응답(없으면 None) 반환. 예외도 재시도."""
@@ -1240,11 +1219,6 @@ def fetch_google_rss(queries: List[str],
     all_items:   List[Dict] = []
     seen_hashes: set        = set()
 
-    # ⭐ 서킷브레이커 발동 상태면 즉시 스킵
-    if _rss_disabled:
-        print("  📰 Google RSS: 스킵 (서킷브레이커 발동 중)")
-        return all_items
-
     for qi, query in enumerate(queries):
         if qi:
             time.sleep(0.4)   # 쿼리 간 간격 — throttle 유발 완화
@@ -1254,14 +1228,8 @@ def fetch_google_rss(queries: List[str],
             if resp is None or resp.status_code != 200:
                 code = resp.status_code if resp is not None else 'ERR'
                 print(f"  ⚠️ RSS HTTP {code}: {query[:30]} (재시도 후)")
-                # ⭐ throttle성 실패만 카운트 → 임계치 도달 시 이번 실행 RSS 중단
-                if resp is None or resp.status_code in (429, 500, 502, 503, 504):
-                    _rss_cb_fail()
-                    if _rss_disabled:
-                        break
                 time.sleep(0.5)
                 continue
-            _rss_cb_ok()   # ⭐ 200 수신 → 연속 실패 카운터 리셋
 
             # XML 파싱
             try:

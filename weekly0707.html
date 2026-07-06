@@ -321,55 +321,15 @@ function runJob(url, body, logEl, phaseLabel){
       const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
       if(r.status===409){ logEl.textContent+='⚠️ 이미 실행 중입니다. 잠시 후 다시 시도하세요.\n'; return resolve(false); }
     }catch(e){ logEl.textContent+='❌ 서버 연결 실패: '+e.message+'\n'; return resolve(false); }
-    resolve(await pollWeekly(logEl));
-  });
-}
-
-// 실행 중인 weekly 작업을 완료까지 폴링 (새로고침 후 재접속에도 사용)
-function pollWeekly(logEl, since=0){
-  return new Promise(resolve=>{
+    let since=0;
     const poll=setInterval(async()=>{
       try{
         const s=await (await fetch(`/api/job/status?job=weekly&since=${since}`)).json();
         if(s.logs&&s.logs.length){ logEl.textContent+=s.logs.join('\n')+'\n'; since=s.total; logEl.scrollTop=logEl.scrollHeight; }
         if(s.done){ clearInterval(poll); resolve(!!s.success); }
-      }catch(e){/* 네트워크 순단 — 계속 폴링 */}
+      }catch(e){/* keep polling */}
     },1200);
   });
-}
-
-// ⭐ 새로고침·탭 복구 시: 서버에서 진행 중인 작업이 있으면 모니터링을 이어붙임
-//   (Chrome 메모리 절약이 백그라운드 탭을 내리면 페이지가 초기화되는 문제 대응)
-async function resumeIfRunning(){
-  let s; try{ s=await (await fetch('/api/job/status?job=weekly')).json(); }catch(e){ return; }
-  if(!s.running) return;
-  $('#runBtn').disabled=true;
-  $('#monitorCard').style.display='block';
-  const logEl=$('#runLog');
-  const phaseName = s.phase==='curate' ? '② AI 큐레이션' : '① 기사 수집';
-  logEl.textContent=`⏳ 진행 중인 작업(${phaseName})에 다시 연결했습니다…\n`;
-  const ok=await pollWeekly(logEl);
-  if(s.phase==='collect'){
-    const saved=jget('cre_wk_run',null);
-    if(ok&&saved&&saved.from&&saved.to){
-      // 수집 완료 → 저장된 기간으로 큐레이션 자동 이어가기
-      const ok2=await runJob('/api/weekly/curate',{date_from:saved.from,date_to:saved.to,top:5,...getOverrides()},logEl,'② AI 큐레이션');
-      localStorage.removeItem('cre_wk_run');
-      $('#runBtn').disabled=false;
-      if(!ok2){ logEl.textContent+='\n❌ 큐레이션 단계 실패 — 로그를 확인하세요.\n'; return; }
-      logEl.textContent+='\n✅ 전체 완료 — 결과를 불러옵니다.\n';
-      await loadWeeklyNews();
-    }else{
-      $('#runBtn').disabled=false;
-      logEl.textContent+= ok ? '\n✅ 수집 완료 — [실행] 버튼으로 큐레이션까지 다시 진행하세요.\n'
-                             : '\n❌ 수집 실패 — 로그를 확인하세요.\n';
-    }
-  }else{
-    localStorage.removeItem('cre_wk_run');
-    $('#runBtn').disabled=false;
-    if(ok){ logEl.textContent+='\n✅ 전체 완료 — 결과를 불러옵니다.\n'; await loadWeeklyNews(); }
-    else{ logEl.textContent+='\n❌ 큐레이션 단계 실패 — 로그를 확인하세요.\n'; }
-  }
 }
 
 async function runAll(){
@@ -387,13 +347,11 @@ async function runAll(){
   $('#monitorCard').scrollIntoView({behavior:'smooth'});
 
   const ov=getOverrides();
-  localStorage.setItem('cre_wk_run', JSON.stringify({from,to}));   // ⭐ 새로고침 복구용 기간 저장
   // ① 기사 수집 (기간·활성 카테고리)
   const ok1=await runJob('/api/weekly/collect',{date_from:from,date_to:to,...ov},logEl,'① 기사 수집 (LLM 미사용)');
-  if(!ok1){ logEl.textContent+='\n❌ 수집 단계 실패 — 중단합니다.\n'; localStorage.removeItem('cre_wk_run'); $('#runBtn').disabled=false; return; }
+  if(!ok1){ logEl.textContent+='\n❌ 수집 단계 실패 — 중단합니다.\n'; $('#runBtn').disabled=false; return; }
   // ② AI 큐레이션 (카테고리별 추출 개수)
   const ok2=await runJob('/api/weekly/curate',{date_from:from,date_to:to,top:5,...ov},logEl,'② AI 큐레이션');
-  localStorage.removeItem('cre_wk_run');
   $('#runBtn').disabled=false;
   if(!ok2){ logEl.textContent+='\n❌ 큐레이션 단계 실패 — 로그를 확인하세요.\n'; return; }
   logEl.textContent+='\n✅ 전체 완료 — 결과를 불러옵니다.\n'; logEl.scrollTop=logEl.scrollHeight;
@@ -519,8 +477,6 @@ function setDefaultWeek(){
   updatePromptBadge();
   // 이미 만들어진 주간 결과가 있으면 표시
   fetch('/data/weekly_news.json?_='+Date.now()).then(r=>r.ok?r.json():null).then(d=>{ if(d&&d.categories){ WK=d; showResults(); } }).catch(()=>{});
-  // ⭐ 진행 중인 작업이 있으면 모니터링 재접속
-  resumeIfRunning();
 })();
 </script>
 </body>
