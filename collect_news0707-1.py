@@ -267,17 +267,12 @@ ASSET_TRANSACTION_CATEGORY = {
 
 CORPORATE_SPACE_CATEGORY = {
     "id": "corporate_space", "name": "기업 공간 전략",
-    "ai_definition": "기업의 오피스 공간 전략(신사옥·본사 이전, 임차 확장·축소, 하이브리드 근무·오피스 복귀(RTO), 공유오피스·거점오피스, 사무공간 효율화·리모델링, 워크플레이스 혁신)이 기사의 핵심 주제인 경우. 다음은 반드시 제외: '스마트오피스' 등의 명칭만 쓴 교육·어학·가전·SW 상품 홍보, 빌딩 에너지 관리·설비 솔루션(스마트빌딩/ESG 카테고리 사안), 모듈러 주택·건설공법, 유통·외식 매장 소식, 기업 성장기사에서 오피스를 한 줄 언급한 경우.",
+    "ai_definition": "기업의 오피스 공간 전략(하이브리드 근무·공유오피스·사무공간 효율화·리모델링·워크플레이스 혁신)이 기사의 핵심 주제인 경우. 기업 성장기사에서 오피스를 한 줄 언급하거나, 외식·유통 매장 리뉴얼 기사는 제외.",
     "icon": "🏗️", "label": "WORKSPACE",
     "search_queries": [
         # 넓은 그물
         '사옥 이전', '공유오피스', '워크플레이스',
         '사무공간', '코워킹스페이스',
-        # ⭐ 뉴스 볼륨 큰 핵심 주제 (신사옥·RTO·브랜드)
-        '신사옥', '본사 이전', '사옥 입주', '오피스 확장 이전',
-        '오피스 복귀', '전면 출근 기업', '재택근무 축소',
-        '위워크', '패스트파이브', '스파크플러스',
-        '자율좌석제', '워케이션 기업',
         # 기존 전문 쿼리
         '워크플레이스 트렌드 기업', '하이브리드 근무 오피스 전략',
         '거점 오피스 전략 기업', '코워킹스페이스 확대',
@@ -287,7 +282,6 @@ CORPORATE_SPACE_CATEGORY = {
     ],
     "rss_queries": [
         '사옥 이전', '공유오피스', '코워킹스페이스',
-        '신사옥', '본사 이전', '오피스 복귀',
         '워크플레이스 트렌드 기업', '하이브리드 근무 오피스 전략',
         '거점 오피스 전략', '코워킹스페이스 확대',
         '사무공간 효율화 기업', '오피스 리모델링 기업',
@@ -298,11 +292,6 @@ CORPORATE_SPACE_CATEGORY = {
         '사무공간 효율화', '오피스 면적', '오피스 리모델링',
         '스마트오피스', '플렉스오피스', '직원 경험 오피스',
         '오피스 환경 전략', '좌석 활용률', '근무지 유연화 오피스',
-        # ⭐ 신사옥·이전·RTO·브랜드 (수집 폭 확장)
-        '신사옥', '본사 이전', '사옥 이전', '사옥 입주', '오피스 확장',
-        '오피스 복귀', '전면 출근', '주5일 출근',
-        '위워크', '패스트파이브', '스파크플러스',
-        '자율좌석', '워케이션',
     ],
     "must_not_keywords": BASE_MUST_NOT,  # 세부 판단은 AI에 위임
     "min_relevance_score": 0,
@@ -1891,9 +1880,9 @@ def _build_summary_prompt(items: List[Dict], category: Dict) -> str:
 
 ━━━━━━━━━━━━━━━━━━━━
 【작성 규칙 — 전부 지킬 것】
-1. summary: "▪ " 로 시작하는 개조식 줄. 정확히 2줄 — 예외 없음. 각 줄 40자 이하.
+1. summary: "▪ " 로 시작하는 개조식 줄. 최대 2줄. 각 줄 40자 이하.
    - 줄1: 핵심사실 (주체+행위+수치)
-   - 줄2: 줄1과 다른 정보 (위치·배경·전망·의미). 새 정보가 부족해도 기사 속 배경·맥락으로 반드시 2줄째를 작성한다.
+   - 줄2: 줄1과 다른 정보 (위치·배경·전망). 없으면 1줄만.
 2. short_summary: summary 핵심을 1줄로. 30자 이하.
 3. 모든 줄은 완결어미로 끝낼 것: ~했다 / ~됐다 / ~예정 / ~체결 / ~선정 / ~전망 / ~확대
 4. 조사(을·를·이·가·의·에서·통해·위해·등·및)로 끝나는 줄 출력 금지.
@@ -2050,7 +2039,7 @@ def _validate_and_fix_summary(summary: str, item: Dict) -> str:
     조사로 끝나는 줄만 드롭하고, 나머지는 AI 생성 그대로 반환.
     """
     if not summary:
-        return _ensure_two_lines(_fallback_summary_for_item(item), item)
+        return _fallback_summary_for_item(item)
 
     # \\n 리터럴 → 실제 줄바꿈
     summary = summary.replace('\\n', '\n')
@@ -2085,38 +2074,10 @@ def _validate_and_fix_summary(summary: str, item: Dict) -> str:
         good_lines.append(f"▪ {content}")
 
     if not good_lines:
-        return _ensure_two_lines(_fallback_summary_for_item(item), item)
+        return _fallback_summary_for_item(item)
     if len(good_lines) == 1:
-        return _ensure_two_lines(good_lines[0], item)
+        return good_lines[0]
     return '\n'.join(good_lines[:2])
-
-
-def _ensure_two_lines(summary: str, item: Dict) -> str:
-    """⭐ 요약을 예외 없이 정확히 2줄로 보정.
-    1줄이면 줄2를 생성: 본문 폴백 문장 → 제목 압축 → 출처·보도일 순."""
-    lines = [ln for ln in summary.split('\n') if ln.strip()]
-    if len(lines) >= 2:
-        return '\n'.join(lines[:2])
-    line1 = lines[0] if lines else ''
-    p1 = re.sub(r'^▪\s*', '', line1).strip()[:12]
-
-    # 1순위: 본문 기반 폴백 요약에서 줄1과 겹치지 않는 줄
-    for cand in _fallback_summary_for_item(item).split('\n'):
-        c = re.sub(r'^▪\s*', '', cand).strip()
-        if len(c) >= 8 and c[:12] != p1:
-            return f"{line1}\n▪ {c}" if line1 else f"▪ {c}"
-
-    # 2순위: 제목 압축
-    t = re.sub(r'^\[[^\]]{1,40}\]\s*', '', item.get('title', '') or '').strip()
-    t = _compress_to_gaejoesik(t, 45)
-    if len(t) >= 8 and t[:12] != p1:
-        return f"{line1}\n▪ {t}" if line1 else f"▪ {t}"
-
-    # 최후: 출처·보도일 (사실 정보로 2줄 형식 유지)
-    src = item.get('source', '') or '원문'
-    d = (item.get('pub_date', '') or '')[:10]
-    tail = f"{src} 보도" + (f" ({int(d[5:7])}월 {int(d[8:10])}일)" if len(d) == 10 and d[5:7].isdigit() else "")
-    return f"{line1}\n▪ {tail}" if line1 else f"▪ {tail}"
 
 
 def _fallback_summary_for_item(item: Dict) -> str:
@@ -2160,7 +2121,7 @@ def _fallback_summary_for_item(item: Dict) -> str:
 def _apply_fallback_summaries(items: List[Dict]) -> List[Dict]:
     """모든 AI 실패 시 전체 아이템에 rule-based 폴백 적용"""
     for item in items:
-        item['ai_summary'] = _ensure_two_lines(_fallback_summary_for_item(item), item)
+        item['ai_summary'] = _fallback_summary_for_item(item)
     return items
 
 
@@ -2302,9 +2263,9 @@ def _build_combined_prompt(batch: List[Dict], cat_name: str, category: Dict) -> 
 
 【요약 규칙 (선별된 기사에만 적용)】
 우선 포함할 수치: {key_focus}
-1. summary: "▪ "로 시작하는 개조식 줄. 정확히 2줄 — 예외 없음. 각 줄 40자 이하.
+1. summary: "▪ "로 시작하는 개조식 줄. 최대 2줄. 각 줄 40자 이하.
    - 줄1: 핵심사실 (주체+행위+수치)
-   - 줄2: 줄1과 다른 정보 (위치·배경·전망·의미). 새 정보가 부족해도 기사 속 배경·맥락·업계 함의로 반드시 2줄째를 작성한다. 1줄만 출력하는 것은 규칙 위반.
+   - 줄2: 줄1과 다른 정보 (위치·배경·전망). 없으면 1줄만.
 2. short_summary: 기사 핵심을 1줄로. 공백 포함 30자 이내의 완결된 한 줄. 길게 쓰고 자르지 말고 처음부터 30자 안에 끝낼 것.
 3. comment(인사이트 한줄): 공백 포함 30자 이내의 완결된 한 줄. CRE 임대차·투자 실무자 관점의 함의(예측·리스크·기회 중 하나). 명사 또는 아주 짧은 서술어로 마무리(예: ~확대 / ~우위 / ~시급 / ~노출 / ~전환). 30자를 절대 넘기지 말 것. 사실 단순 반복 금지.
 4. 모든 줄(특히 short_summary·comment)은 조사·연결어미(은·는·이·가·을·를·에·의·로·없이·위해·통해·등·및)로 끝내지 말 것. 명사 또는 완결어미(~했다·됐다·예정·전망·확대 등)로 끝낼 것.
