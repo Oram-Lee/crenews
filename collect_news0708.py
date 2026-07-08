@@ -2236,18 +2236,6 @@ def _apply_curations(batch: List[Dict], curations: List[Dict],
     return curated
 
 
-# ⭐ 카테고리 배타 판정용 한 줄 정의 — 큐레이션 프롬프트에서 "핵심 주제가
-#   다른 카테고리에 명확히 더 부합하면 제외" 판단 기준으로 사용
-CAT_ONE_LINERS = {
-    "real_estate_market": ("부동산 시장 & 정책", "금리·정책·제도·규제·시장 동향·통계 등 거시 이슈가 핵심"),
-    "office_lease":       ("오피스 임대차",     "오피스 공실·임대료·임차인 이전·임대차 계약이 핵심"),
-    "asset_transaction":  ("자산 매입·매각",    "개별 자산(빌딩·타워 등)의 매입·매각·우협·인수 딜이 핵심"),
-    "corporate_space":    ("기업 공간 전략",    "기업의 사옥·워크플레이스·근무공간 전략이 핵심"),
-    "industrial_asset":   ("산업용 자산",       "물류센터·데이터센터·지식산업센터 관련이 핵심"),
-    "smart_esg":          ("스마트 빌딩 & ESG", "빌딩 기술·프롭테크·ESG·에너지·인증이 핵심"),
-}
-
-
 def _build_combined_prompt(batch: List[Dict], cat_name: str, category: Dict) -> str:
     """선별 + 요약을 단일 호출로 처리하는 통합 프롬프트.
 
@@ -2257,12 +2245,6 @@ def _build_combined_prompt(batch: List[Dict], cat_name: str, category: Dict) -> 
     """
     cat_id         = category.get("id", "")
     cat_definition = category.get("ai_definition", cat_name)
-
-    # ⭐ 카테고리 배타 판정용 — 타 카테고리 한 줄 정의 목록 (핵심 주제 귀속 기준)
-    other_cats = "\n".join(
-        f"    - {name}: {desc}"
-        for cid, (name, desc) in CAT_ONE_LINERS.items() if cid != cat_id
-    )
 
     key_focus_map = {
         "real_estate_market": "캡레이트(%), 거래규모(억원), 투자수익률(%)",
@@ -2308,10 +2290,6 @@ def _build_combined_prompt(batch: List[Dict], cat_name: str, category: Dict) -> 
   · 단순 인사·동정·시상·구인 기사
   · 분양·청약 광고(기사로 위장한 홍보): 본문에 '홍보관'·'모델하우스'·'견본주택'·'분양/청약 상담'·'분양/청약 문의'·'선착순'·'즉시 입주'·'계약금/중도금'·'잔여세대'·'수익률 보장' 등 판매·청약 권유 표현이 있으면, 지식산업센터·오피스 분양이라도 무조건 제외
   · 부동산·상업용 부동산과 전혀 무관한 기사
-  · 기사의 '핵심 주제'가 본 카테고리보다 아래 카테고리 중 하나에 '명확히' 더 부합하는 기사
-    — 그 기사는 해당 카테고리에서 다루므로 여기서는 제외한다.
-      (단, 핵심 주제는 본 카테고리이고 다른 카테고리와 부분적으로만 연관된 경우는 제외하지 않는다)
-{other_cats}
 ■ 포함 — 위 '명확한 제외'에 걸리지 않으면 기본적으로 포함:
   · 국내 상업용 부동산(오피스·리테일·물류·호텔·데이터센터·지식산업센터)의
     매입·매각/거래, 임대차·공실·임대료, 개발·PF, 시장동향·정책·제도, 운용사·리츠·투자
@@ -2636,79 +2614,6 @@ def cross_category_dedup(all_categories_output: List[Dict]) -> List[Dict]:
         cat["count"] = len(cat["items"])
 
     print(f"  📊 cross-category 중복 제거: 총 {removed_total}건")
-    return all_categories_output
-
-
-# ================================================================
-#  ⭐ 강한 시그널 기반 카테고리 재배치 (post-curation reassign)
-# ================================================================
-#  카테고리별 '독립' 수집·선별 구조에서는 배타적 분류기가 없어, 개별 딜
-#  기사가 시장·정책/임대차에, 물류·DC 기사가 시장·정책에 남는 오귀속이
-#  발생한다 (특화 카테고리에서 컷되면 cross_category_dedup도 미발동).
-#  → 최종 결과의 '제목 강한 시그널'로 특화 카테고리로 이동시킨다.
-#  오탐 방지 3중 조건: 딜 시그널 + 자산 문맥 동시 존재, 집계·정책 시그널 시 제외.
-
-ASSET_DEAL_SIGNALS = ['매각', '매입', '우선협상', '우협', '낙찰', '세일즈앤리스백', '새 주인', '인수']
-ASSET_CONTEXT      = ['빌딩', '타워', '사옥', '오피스', '부동산', '자산', '센터', '스퀘어',
-                      '몰', '호텔', '리테일', '캠퍼스']
-INDUSTRIAL_SIGNALS = ['물류센터', '데이터센터', '지식산업센터', '물류시설', '물류 부동산',
-                      'IDC', '콜드체인']
-# 집계·통계·정책·전망 기사는 개별 딜이 아니므로 재배치하지 않는다
-REASSIGN_EXCLUDE   = ['거래량', '거래액', '통계', '지수', '동향', '추이', '전월', '전년',
-                      '월간', '분기', '상반기', '하반기', '급감', '급증',
-                      '규제', '정책', '법안', '시행령', '완화', '연장', '전망']
-
-
-def _strong_signal_target(title: str, curr_id: str) -> Optional[str]:
-    """제목의 강한 시그널로 최적 카테고리 id 반환. 이동 불필요하면 None."""
-    if not title or any(x in title for x in REASSIGN_EXCLUDE):
-        return None
-    has_ind     = any(s in title for s in INDUSTRIAL_SIGNALS)
-    has_deal    = any(s in title for s in ASSET_DEAL_SIGNALS)
-    has_context = any(s in title for s in ASSET_CONTEXT)
-    # 물류·DC·지산 기사는 딜 여부와 무관하게 산업용 자산으로
-    if has_ind and curr_id != "industrial_asset":
-        return "industrial_asset"
-    # 개별 자산 딜(딜 시그널 + 자산 문맥)은 자산 매입·매각으로
-    if has_deal and has_context and not has_ind and curr_id != "asset_transaction":
-        return "asset_transaction"
-    return None
-
-
-def reassign_by_strong_signal(all_categories_output: List[Dict]) -> List[Dict]:
-    """cross_category_dedup 직후 호출 — 오귀속 기사를 특화 카테고리로 이동."""
-    cat_by_id = {c["id"]: c for c in all_categories_output}
-    moves = []
-    for cat in all_categories_output:
-        for item in list(cat["items"]):
-            tid = _strong_signal_target(item.get("title", ""), cat["id"])
-            tgt = cat_by_id.get(tid) if tid else None
-            if tgt is not None and tgt is not cat:
-                moves.append((cat, item, tgt))
-    if not moves:
-        return all_categories_output
-
-    moved = 0
-    for src, item, tgt in moves:
-        src["items"].remove(item)
-        h = item.get("hash_id", "")
-        if h and any(it.get("hash_id") == h for it in tgt["items"]):
-            # 대상 카테고리에 동일 기사 이미 존재 → 중복이므로 제거만
-            print(f"  🔀 [{src['name']}] 중복 정리(대상에 기존재): {item.get('title','')[:38]}")
-            moved += 1
-            continue
-        item["category"]      = tgt["id"]
-        item["category_name"] = tgt["name"]
-        item["category_icon"] = tgt.get("icon", "")
-        tgt["items"].append(item)
-        print(f"  🔀 [{src['name']} → {tgt['name']}] {item.get('title','')[:38]}")
-        moved += 1
-
-    for cat in all_categories_output:
-        for rank, it in enumerate(cat["items"], 1):
-            it["rank"] = rank
-        cat["count"] = len(cat["items"])
-    print(f"  📊 강한 시그널 재배치: 총 {moved}건")
     return all_categories_output
 
 # ================================================================
@@ -3043,7 +2948,6 @@ def run_weekly(config: NewsConfig, date_from: datetime, date_to: datetime,
             "count": len(curated), "items": curated})
 
     all_categories_output = cross_category_dedup(all_categories_output)
-    all_categories_output = reassign_by_strong_signal(all_categories_output)   # ⭐ 오귀속 재배치
     total_count = sum(c["count"] for c in all_categories_output)
 
     flat = [it for c in all_categories_output for it in c["items"]]
@@ -3185,7 +3089,6 @@ def main():
     print(f"\n{'='*60}")
     print("🔍 카테고리 간 중복 제거 중...")
     all_categories_output = cross_category_dedup(all_categories_output)
-    all_categories_output = reassign_by_strong_signal(all_categories_output)   # ⭐ 오귀속 재배치
     total_count = sum(cat["count"] for cat in all_categories_output)
 
     # ── 저장 ────────────────────────────────────────────────────
