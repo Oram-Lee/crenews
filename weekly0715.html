@@ -433,12 +433,8 @@ function selectTab(cid){
   $('#catPanel').innerHTML = c.items.map((it,k)=>articleHtml(c.id,it,k)).join('');
 }
 function articleHtml(cid,it,k){
-  // 광고성 검토 배지 — 검토 화면 전용. buildNewsletterHtml(발송본)에는 절대 넣지 않는다.
-  const adBadge = it.ad_flag
-    ? `<span title="광고성 의심 점수 ${it.ad_score} — 최종 판단은 검토자 몫입니다" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d;font-size:11px;font-weight:700;padding:1px 6px;border-radius:4px;margin-left:6px">📢 광고성 검토 필요${(it.ad_reasons||[]).length?' · '+esc(it.ad_reasons.join('+')):''}</span>`
-    : '';
   return `<div class="news">
-    <div class="news-top"><span class="news-src">${esc(it.source||'')}</span><span>${(it.pub_date||'').slice(0,10)}</span>${adBadge}</div>
+    <div class="news-top"><span class="news-src">${esc(it.source||'')}</span><span>${(it.pub_date||'').slice(0,10)}</span></div>
     <div class="news-title"><a href="${esc(it.link||'#')}" target="_blank">${esc(it.title||'')}</a></div>
     ${it.ai_summary?`<div class="news-sum">${esc(it.ai_summary)}</div>`:''}
     <div class="insight">💬 <b>S&amp;I Insight:</b> <span contenteditable oninput="setComment('${cid}',${k},this.textContent)">${esc(it.ai_comment||'')}</span></div>
@@ -483,19 +479,17 @@ function exportWeeklyExcel(){
   if(!WK){ toast('결과가 없습니다'); return; }
   const cats=visibleCats();
   if(!cats.length){ toast('내보낼 기사가 없습니다'); return; }
-  const headers=['날짜','카테고리','신문사','제목','링크','요약','S&I Insight','광고성 검토'];
+  const headers=['날짜','카테고리','신문사','제목','링크','요약','S&I Insight'];
   const rows=[];
   cats.forEach(c=>{
     c.items.forEach(it=>{
       const date=(it.pub_date||'').slice(0,10);
       const title=(it.title||'').replace(/^(\s*\[[^\]]{1,40}\]\s*)+/,'').replace(/\s*[.…⋯]+\s*$/,'').trim();
-      // 광고성 검토: 점수 + 사유 (예: "4 · 홍보술어+브랜드명"). 미해당은 공란.
-      const ad = it.ad_flag ? `${it.ad_score} · ${(it.ad_reasons||[]).join('+')||'복합'}` : '';
-      rows.push([date, c.name, it.source||'', title, it.link||'', it.ai_summary||'', it.ai_comment||'', ad]);
+      rows.push([date, c.name, it.source||'', title, it.link||'', it.ai_summary||'', it.ai_comment||'']);
     });
   });
   const ws=XLSX.utils.aoa_to_sheet([headers,...rows]);
-  ws['!cols']=[{wch:12},{wch:18},{wch:13},{wch:72},{wch:8},{wch:80},{wch:60},{wch:24}];
+  ws['!cols']=[{wch:12},{wch:18},{wch:13},{wch:72},{wch:8},{wch:80},{wch:60}];
   // 링크 컬럼(E, index 4) 하이퍼링크
   rows.forEach((row,ri)=>{
     if(!row[4]) return;

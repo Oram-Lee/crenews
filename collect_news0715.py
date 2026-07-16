@@ -1466,150 +1466,6 @@ def _source_authority(source: str) -> int:
     return DEFAULT_AUTHORITY
 
 
-# ================================================================
-#  광고성 기사 판정 (차단 X · 태그만 부여 → UI/엑셀에서 현업이 최종 판단)
-# ================================================================
-#  설계 원칙: 차단이 아니라 '검토 필요' 표시이므로 느슨하게 잡는다.
-#    오탐(정상 기사에 태그) = 현업이 2초 훑고 넘김 → 비용 낮음
-#    미탐(광고 놓침)        = 지금과 동일 → 손해 없음
-#  ⚙️ 튜닝은 아래 사전 + AD_FLAG_THRESHOLD 만 수정하면 됨.
-
-# 광고에만 쓰이는 홍보 술어 (+2)
-AD_PREDICATES_STRONG = [
-    '관심집중', '관심 집중', '관심 이어져', '관심 쏠려', '관심 쏠린다',
-    '새 선택지', '문의 쇄도', '완판', '마감 임박', '선착순', '눈길',
-    '각광', '호평', '자리매김', '후끈', '흥행', '뭉칫돈', '들썩',
-    '기대감 고조', '눈여겨볼', '주목받는', '주목받아',
-]
-# 정상 기사에도 쓰이는 약한 홍보 술어 (+1)
-AD_PREDICATES_WEAK = [
-    '공급', '분양 중', '분양중', '선보여', '선봬', '선보인다',
-    '주목', '부상', '인기', '화제', '뜬다', '눈앞', '최적', '프리미엄',
-]
-# 부동산 분양 브랜드 접미어 (따옴표 안에 있으면 브랜드명으로 간주)
-AD_BRAND_SUFFIX = [
-    '지식산업센터', '지산', '타워', '밸리', '힐스', '스퀘어', '시티',
-    '파크', '플라자', '캠퍼스', '스테이', '큐브', '비즈', '테크노',
-    '허브', '센텀', '메가', '프라임', '워크', '리버', '테라스',
-]
-# 분양 광고에 자주 붙는 지역·권역명
-AD_REGIONS = [
-    '여의도', '강남', '서초', '마곡', '판교', '성수', '문정', '가산',
-    '구로', '상암', '마포', '종로', '을지로', '광교', '동탄', '송도',
-    '청라', '김포', '하남', '덕은', '고양', '일산', '오창', '청주',
-    '평택', '화성', '용인', '안성', '이천', '인천', '부산', '대구',
-    '광주', '대전', '울산', '세종', '남양주', '시흥', '안산', '군포',
-]
-# 정상 기사 신호 — 부정·리스크 서술 (-2)
-AD_NEGATIVE_SIGNALS = [
-    '공실', '침체', '하락', '미분양', '텅', '최저', '리스크', '우려',
-    '급감', '위기', '역성장', '적자', '연체', '부실', '경고', '둔화',
-    '악화', '감소', '축소', '해지', '유찰', '무산', '논란', '지연',
-]
-# CRE와 무관한 섹션 URL 경로 (+2) — 매체 공신력이 높아도 지면이 다름
-AD_BAD_SECTIONS = [
-    '/news/stock/', '/stock/', '/securities/', '/securit',
-    '/it/', '/entertain', '/sports/', '/health/', '/travel/',
-]
-# 광고·협찬 지면 서브도메인 (+2) — 본지 도메인에 endswith 매칭돼 고득점 오인되는 곳
-AD_BAD_SUBDOMAINS = [
-    'edu.donga.com', 'mlbpark.donga.com', 'game.donga.com',
-    'it.donga.com', 'bizn.donga.com', 'woman.donga.com',
-]
-# 구체 수치 — 사실 기사 신호 (-1)
-_AD_NUM_RE = re.compile(r'\d[\d,\.]*\s*(억|조|평|%|가구|세대|만원|원/평|㎡|층)')
-# 따옴표로 감싼 고유명사 추출
-_AD_QUOTE_RE = re.compile(r"[‘'\"“]([^’'\"”]{2,30})[’'\"”]")
-
-AD_FLAG_THRESHOLD = 2   # 이 점수 이상이면 '광고성 검토 필요' 태그 (느슨)
-
-
-def score_advertorial(item: Dict) -> tuple:
-    """광고성 의심 점수와 사유 라벨을 계산. 반환: (score, [사유라벨, ...])
-
-    차단하지 않는다. ad_flag/ad_score/ad_reasons 필드만 부여해
-    UI 배지·엑셀 컬럼으로 노출하고 최종 판단은 사람이 한다.
-    """
-    title = item.get("title", "") or ""
-    desc  = item.get("description", "") or ""
-    link  = (item.get("link", "") or "").lower()
-    text  = title + " " + desc
-
-    score = 0
-    reasons = []
-
-    # ① 홍보 술어 (제목에서만 — 본문은 오탐이 급증)
-    if any(p in title for p in AD_PREDICATES_STRONG):
-        score += 2
-        reasons.append("홍보술어")
-    elif any(p in title for p in AD_PREDICATES_WEAK):
-        score += 1
-        reasons.append("홍보술어")
-
-    # ② 브랜드명 — 따옴표 안에 부동산 접미어 또는 지역명
-    #    ('낮은 수익률' 같은 강조 따옴표를 걸러내기 위한 조건)
-    brand_hit = False
-    for q in _AD_QUOTE_RE.findall(title):
-        if any(s in q for s in AD_BRAND_SUFFIX) or any(r in q for r in AD_REGIONS):
-            score += 2
-            brand_hit = True
-            break
-    if not brand_hit:
-        # 따옴표 없이 지역명 + 브랜드 접미어가 함께 있는 경우
-        if (any(r in title for r in AD_REGIONS)
-                and any(s in title for s in AD_BRAND_SUFFIX)):
-            score += 1
-            brand_hit = True
-    if brand_hit:
-        reasons.append("브랜드명")
-
-    # ③ 기존 분양 광고 문구 (제목+설명)
-    if any(p in text for p in ADVERTORIAL_PATTERNS):
-        score += 2
-        reasons.append("분양문구")
-
-    # ④ 광고·협찬 지면 서브도메인 (본지로 오인돼 고득점 받는 통로)
-    if any(d in link for d in AD_BAD_SUBDOMAINS):
-        score += 2
-        reasons.append("광고지면")
-
-    # ⑤ CRE 무관 섹션 (증권면 IR 보도자료 등)
-    if any(s in link for s in AD_BAD_SECTIONS):
-        score += 2
-        reasons.append("타섹션")
-
-    # ⑥ 매체 공신력 — UI에서 매체 점수를 낮추면 자동으로 태그가 붙는다
-    auth = _source_authority(item.get("source", ""))
-    if auth < 30:
-        score += 2
-        reasons.append("저공신력")
-    elif auth < 40:
-        score += 1
-        reasons.append("저공신력")
-
-    # ⑦ 정상 기사 신호 — 감점
-    if any(n in title for n in AD_NEGATIVE_SIGNALS):
-        score -= 2
-    if _AD_NUM_RE.search(title):
-        score -= 1
-
-    return max(0, score), reasons
-
-
-def annotate_advertorial(items: List[Dict]) -> None:
-    """items 각각에 ad_score/ad_flag/ad_reasons 를 in-place 부여."""
-    flagged = 0
-    for it in items:
-        s, r = score_advertorial(it)
-        it["ad_score"]   = s
-        it["ad_flag"]    = s >= AD_FLAG_THRESHOLD
-        it["ad_reasons"] = r if it["ad_flag"] else []
-        if it["ad_flag"]:
-            flagged += 1
-    if items:
-        print(f"  📢 광고성 검토 태그: {flagged}/{len(items)}건")
-
-
 def _clamp_insight(text: str, max_len: int = 30) -> str:
     """한줄 텍스트(한줄요약·한줄평)를 공백 포함 max_len자 이내로 정리.
 
@@ -2938,9 +2794,7 @@ def collect_category(config: NewsConfig, category: Dict,
         item.pop("relevance_score", None)
 
     _cap = max_out if isinstance(max_out, int) and max_out > 0 else config.MAX_NEWS_PER_CATEGORY
-    curated = curated[:_cap]
-    annotate_advertorial(curated)   # ⭐ 광고성 검토 태그 (차단 X · 표시만)
-    return curated
+    return curated[:_cap]
 
 
 # ================================================================
@@ -3184,7 +3038,6 @@ def run_weekly(config: NewsConfig, date_from: datetime, date_to: datetime,
             it["category_icon"] = category["icon"]
             it.pop("relevance_score", None)
         curated = curated[:cap]
-        annotate_advertorial(curated)   # ⭐ 광고성 검토 태그 (차단 X · 표시만)
         all_categories_output.append({"id": category["id"], "name": category["name"],
             "icon": category["icon"], "label": category["label"],
             "count": len(curated), "items": curated})
