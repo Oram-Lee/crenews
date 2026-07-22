@@ -2392,14 +2392,12 @@ CAT_ONE_LINERS = {
 }
 
 
-def _build_combined_prompt(batch: List[Dict], cat_name: str, category: Dict,
-                           target_min: int = 0, target_cap: int = 0) -> str:
+def _build_combined_prompt(batch: List[Dict], cat_name: str, category: Dict) -> str:
     """선별 + 요약을 단일 호출로 처리하는 통합 프롬프트.
 
     - 기존 _build_curate_prompt (선별) + _build_summary_prompt (요약) 를 1개로 통합
     - 입력 기사에 full_body 가 있으면 본문 우선 사용 (Issue 1 크롤링 결과 활용)
     - 선별된 기사만 JSON 에 포함 (미선별은 index 자체를 생략)
-    - target_min/target_cap: 선별 규모 가이드(0이면 문단 생략 → 기존 동작)
     """
     cat_id         = category.get("id", "")
     cat_definition = category.get("ai_definition", cat_name)
@@ -2435,23 +2433,6 @@ def _build_combined_prompt(batch: List[Dict], cat_name: str, category: Dict,
     _global_extra = (EXTRA_PROMPT_GLOBAL or "").strip()
     global_extra_block = f"\n\n【공통 추가 지침 — 선별·요약 모두 적용】\n{_global_extra}" if _global_extra else ""
 
-    # 선별 규모 가이드 — 소극적 과소선별 교정 (target_min>0 일 때만 삽입)
-    #   프롬프트에 목표 건수가 없으면 모델이 상한을 채울 이유가 없어 적게 고른다.
-    if target_min > 0:
-        _avail = len(batch)
-        _eff_cap = min(target_cap, _avail) if target_cap > 0 else _avail
-        _eff_min = min(target_min, _eff_cap)
-        target_block = (
-            f"\n【선별 규모 — 반드시 준수】\n"
-            f"  · 입력 {_avail}건 중 목표는 {_eff_cap}건, 최소 {_eff_min}건 이상 선별한다.\n"
-            f"  · '명확한 제외 대상'(주거·시황·광고·무관)을 먼저 제거하고, 남은 기사가\n"
-            f"    최소치에 못 미치면 경계선 기사를 적극 포함해 목표 건수를 채운다.\n"
-            f"  · 무관한 기사를 억지로 넣으라는 뜻이 아니라, 애매해서 뺐던 기사를\n"
-            f"    다시 포함하라는 의미다. 과소선별은 규칙 위반이다.\n"
-        )
-    else:
-        target_block = ""
-
     return f"""한국 CRE 뉴스 에디터입니다. 아래 {len(batch)}건에서 [{cat_name}] 기사를 선별하고, 선별된 것만 요약합니다.
 
 ⚠️ 출력 형식(필수): 오직 JSON 배열 하나만 출력한다. 판정 과정·이유·머리말·해설·'STEP' 표기·코드블록(```)을 절대 쓰지 않는다. 응답의 첫 글자는 '[' 이고 마지막 글자는 ']' 이다.
@@ -2484,7 +2465,7 @@ def _build_combined_prompt(batch: List[Dict], cat_name: str, category: Dict,
   · 제외는 위 목록에 '명확히' 해당할 때만 한다. 애매하거나 경계선이면 → '포함'.
   · 의심스러우면 빼지 말고 담는다(과소수집보다 과대수집을 택한다).
   · 같은 기사는 언제 평가해도 같은 결과가 나오도록 위 규칙만으로 판정(인상·추측 금지).
-{target_block}
+
 【요약 규칙 (선별된 기사에만 적용)】
 우선 포함할 수치: {key_focus}
 1. summary: "▪ "로 시작하는 개조식 줄. 정확히 2줄 — 예외 없음. 각 줄 40자 이하.
@@ -2567,8 +2548,7 @@ def ai_curate(config: NewsConfig, news_items: List[Dict],
     # ── 크롤링을 API 호출 전에 실행 (선별+요약 통합 프롬프트에 본문 제공) ──
     _enrich_with_article_body(batch)
 
-    prompt = _build_combined_prompt(batch, cat_name, category,
-                                    target_min=CURATE_TARGET_MIN, target_cap=max_out or 0)
+    prompt = _build_combined_prompt(batch, cat_name, category)
 
     # ── Claude 전용 (선별+요약 통합) — Gemini 폴백 제거 ───────────
     if config.CLAUDE_API_KEY:
@@ -2973,10 +2953,6 @@ WEEKLY_PER_CATEGORY_AI_CAP = 40          # 2단 선별: 카테고리당 큐레�
 WEEKLY_CAP_BY_CATEGORY = {"corporate_space": 20}
 # UI에서 주입하는 카테고리별 개수 (런타임 오버라이드, 비어있으면 위 기본값 사용)
 WEEKLY_CAP_RUNTIME: Dict[str, int] = {}
-# AI 선별 최소 목표치 — 프롬프트에 '최소 N건' 명시로 과소선별 교정.
-#   실제 최소치는 프롬프트 조립 시 min(이 값, cap, 가용건수)로 다시 클램프된다.
-#   마케터 피드백(카테고리당 15~20건 기대) 반영. 상향하려면 이 값만 조정.
-CURATE_TARGET_MIN = 15
 
 
 def _weekly_cap(cat_id: str) -> int:
